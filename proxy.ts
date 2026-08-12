@@ -29,9 +29,24 @@ export async function proxy(request: NextRequest) {
   );
 
   // getUser() revalidates the token with Supabase, unlike getSession().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  let unverified = false;
+
+  // A player carrying session cookies whose token cannot be checked is not the
+  // same as a signed-out visitor: the auth server was unreachable. Access is
+  // still denied either way — only the explanation differs, so the player is
+  // not left thinking their password is wrong.
+  const hasSessionCookie = request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-"));
+
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    user = data.user;
+    if (!user && error && hasSessionCookie) unverified = true;
+  } catch {
+    unverified = hasSessionCookie;
+  }
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_ROUTES.includes(pathname);
@@ -40,6 +55,7 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
+    if (unverified) url.searchParams.set("reason", "unreachable");
     return NextResponse.redirect(url);
   }
 

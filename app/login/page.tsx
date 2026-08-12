@@ -3,8 +3,14 @@ import { AuthForm } from "@/components/AuthForm";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reason?: string }>;
 }) {
-  const { next } = await searchParams;
-  return <AuthForm mode="login" next={next} />;
+  const { next, reason } = await searchParams;
+
+  const notice =
+    reason === "unreachable"
+      ? "We could not reach the server to check your session, so you have been signed out here. Check your connection and try again."
+      : undefined;
+
+  return <AuthForm mode="login" next={next} notice={notice} />;
 }

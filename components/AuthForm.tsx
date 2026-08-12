@@ -33,7 +33,16 @@ const COPY = {
   },
 } as const;
 
-export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
+export function AuthForm({
+  mode,
+  next,
+  notice,
+}: {
+  mode: Mode;
+  next?: string;
+  /** Set when the player was sent here by something other than signing out. */
+  notice?: string;
+}) {
   const router = useRouter();
   const copy = COPY[mode];
 
@@ -104,6 +113,13 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
 
         <h1 className={styles.headline}>{copy.headline}</h1>
         <p className={styles.subhead}>{copy.subhead}</p>
+
+        {notice && (
+          <p className={styles.authError} role="status">
+            <span className={styles.authErrorRule} aria-hidden="true" />
+            {notice}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} noValidate>
           <div className={styles.fields}>
