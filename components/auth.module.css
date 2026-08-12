@@ -1,0 +1,280 @@
+/* Login / sign-up. Designed at 402 × 874; scales per the Responsive rules
+   at the foot of this file. */
+
+.screen {
+  min-height: 100dvh;
+  background: var(--ground-login);
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(96px + env(safe-area-inset-top)) 34px
+    calc(46px + env(safe-area-inset-bottom));
+}
+
+/* 1 — brand row */
+.brand {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+/* 2 — headline */
+.headline {
+  margin-top: 54px;
+  font-size: 58px;
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+  color: var(--color-text);
+}
+
+/* 3 — subhead */
+.subhead {
+  margin-top: 16px;
+  max-width: 250px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--color-neutral-400);
+}
+
+/* 4 — fields */
+.fields {
+  margin-top: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-neutral-400);
+  margin-bottom: 12px;
+}
+
+.input {
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--color-neutral-700);
+  border-radius: 0;
+  background: transparent;
+  font-size: 17px;
+  color: var(--color-text);
+  caret-color: var(--color-accent);
+  transition: border-color 160ms ease-out;
+}
+
+.input:focus {
+  border-bottom-color: var(--color-accent);
+}
+
+/* The palette is mono — an invalid field takes the accent underline plus a
+   message, never a red that isn't in the system. Doubled class so this beats
+   the base rule no matter how the bundler orders them. */
+.input.inputInvalid {
+  border-bottom-color: var(--color-accent);
+}
+
+.password {
+  letter-spacing: 0.3em;
+  padding-right: 36px;
+}
+
+/* An empty password field shouldn't show tracking on its own caret. */
+.password:placeholder-shown {
+  letter-spacing: normal;
+}
+
+.eye {
+  position: absolute;
+  right: 0;
+  bottom: 7px;
+  display: flex;
+  color: var(--color-neutral-500);
+  transition: color 160ms ease-out;
+}
+
+.eye:hover {
+  color: var(--color-accent);
+}
+
+.fieldMessage {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-neutral-400);
+}
+
+/* 5 — options row */
+.options {
+  margin-top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-neutral-300);
+  cursor: pointer;
+}
+
+/* The native input stays in the DOM for assistive tech and keyboard focus,
+   but is never the thing that gets painted. */
+.checkboxInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 3px;
+  border: 1px solid var(--color-neutral-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  transition: border-color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.checkboxInput:checked + .checkbox {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.checkboxInput:focus-visible + .checkbox {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.forgot {
+  font-size: 13px;
+  color: var(--color-neutral-400);
+  transition: color 160ms ease-out;
+}
+
+.forgot:hover {
+  color: var(--color-accent);
+}
+
+/* Auth error — one line above the CTA, with an accent rule to its left. */
+.authError {
+  margin-top: 26px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--color-neutral-200);
+}
+
+.authErrorRule {
+  width: 1px;
+  align-self: stretch;
+  min-height: 18px;
+  flex: none;
+  background: var(--color-accent);
+}
+
+/* 6 — primary CTA. Outlined at rest is a system rule: never a solid fill. */
+.cta {
+  margin-top: 38px;
+  height: 58px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.cta:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.cta:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-accent);
+}
+
+.spinner {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 9 — sign-up line, pushed to the bottom */
+.switchLine {
+  margin-top: auto;
+  padding-top: 30px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-neutral-400);
+}
+
+.switchLink {
+  color: var(--color-accent-300);
+  transition: color 160ms ease-out;
+}
+
+.switchLink:hover {
+  color: var(--color-accent);
+}
+
+/* — Responsive — */
+@media (max-width: 379px) {
+  .headline {
+    font-size: 46px;
+  }
+}
+
+/* Above 600px the content column caps and centres; the ground stays full-bleed. */
+@media (min-width: 601px) {
+  .container {
+    max-width: 420px;
+    margin-inline: auto;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}

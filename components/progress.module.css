@@ -1,0 +1,208 @@
+/* Progress — overall summary, per-drill progress, and full history. */
+
+.summary {
+  margin-top: 38px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-neutral-700);
+  border: 1px solid var(--color-neutral-700);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.stat {
+  background: var(--color-bg);
+  padding: 20px 18px;
+}
+
+.statLabel {
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-neutral-400);
+}
+
+.statValue {
+  margin-top: 10px;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.statNote {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-neutral-500);
+}
+
+.section {
+  margin-top: 42px;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-neutral-400);
+}
+
+.rule {
+  width: 26px;
+  height: 1px;
+  margin-top: 12px;
+  background: var(--color-accent);
+}
+
+/* — per-drill progress cards — */
+
+.drillList {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.drillCard {
+  padding: 20px 18px;
+  border: 1px solid var(--color-neutral-700);
+  border-radius: var(--radius-md);
+}
+
+.drillHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.drillName {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.drillCategory {
+  margin-top: 3px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-neutral-500);
+}
+
+.drillLatest {
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-accent-300);
+  font-variant-numeric: tabular-nums;
+}
+
+.spark {
+  margin-top: 16px;
+  width: 100%;
+  height: 42px;
+  display: block;
+  overflow: visible;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.sparkDot {
+  fill: var(--color-accent-300);
+}
+
+.drillMetrics {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.metric {
+  font-size: 12px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
+}
+
+.metricValue {
+  color: var(--color-neutral-200);
+}
+
+.trendUp {
+  color: var(--color-accent-300);
+}
+
+.trendFlat {
+  color: var(--color-neutral-400);
+}
+
+/* — history — */
+
+.historyList {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.historyRow {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-neutral-700);
+}
+
+.historyRow:first-child {
+  border-top: 1px solid var(--color-neutral-700);
+}
+
+.historyMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.historyDrill {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.historyMeta {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
+}
+
+.historyResult {
+  font-size: 17px;
+  color: var(--color-accent-300);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  margin-top: 38px;
+  padding: 22px;
+  border: 1px solid var(--color-neutral-700);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-neutral-400);
+}
+
+@media (min-width: 601px) {
+  .summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
