@@ -11,6 +11,7 @@ import {
   LEVEL_LABEL,
   tagsOf,
   type DrillCard,
+  type Level,
   type PracticeSession,
 } from "@/lib/types";
 import shell from "@/components/shell.module.css";
@@ -44,8 +45,8 @@ export default async function DrillPage({
 
   if (!drill) notFound();
 
-  // RLS keeps both of these to the signed-in player's own rows.
-  const [{ data: sessions }, { data: favourite }] = await Promise.all([
+  // RLS keeps these to the signed-in player's own rows.
+  const [{ data: sessions }, { data: favourite }, { data: profile }] = await Promise.all([
     supabase
       .from("practice_sessions")
       .select("*")
@@ -58,9 +59,11 @@ export default async function DrillPage({
       .select("drill_id")
       .eq("drill_id", drill.id)
       .maybeSingle(),
+    supabase.from("profiles").select("level").maybeSingle<{ level: Level }>(),
   ]);
 
   const tags = tagsOf(drill);
+  const playerLevel: Level = profile?.level ?? "beginner";
 
   return (
     <AppShell active="practice">
@@ -142,7 +145,7 @@ export default async function DrillPage({
         </section>
       )}
 
-      <DrillPractice drill={drill} />
+      <DrillPractice drill={drill} playerLevel={playerLevel} />
 
       {/* — this drill's recorded history — */}
       <section className={styles.section}>

@@ -109,9 +109,21 @@ results cannot be entered because nothing is typed in.
 `drills.sheet_type` + `drills.sheet_config` let each drill carry a different
 structure, so new sheet designs need no schema change.
 
-**`shot_attempt`** — a fixed number of single shots
-(`sheet_config = {"total_shots": 20}`). One tap of **Made** or **Missed** per
-shot; the row of pips shows the session so far.
+**`shot_attempt`** — a set number of single shots. One tap of **Made** or
+**Missed** per shot; the row of pips shows the session so far.
+
+The count is **a ladder, not a fixed number**:
+
+```json
+{ "total_shots": { "beginner": 10, "intermediate": 15, "advanced": 20 } }
+```
+
+The same drill asks more of a stronger player, so a level is a different target
+rather than a different drill — there is still one row per drill. It resolves
+against the signed-in player's level, falling back down the ladder if a rung is
+missing, and a plain number still works for a drill that should ask everyone
+the same. Existing drills were laddered as base / half again / double, rounded
+up to the nearest five.
 
 ```
 failed  = recorded − made

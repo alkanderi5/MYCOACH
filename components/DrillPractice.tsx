@@ -14,7 +14,13 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
-import type { Drill } from "@/lib/types";
+import {
+  hasLevelLadder,
+  LEVEL_LABEL,
+  resolveShotTarget,
+  type Drill,
+  type Level,
+} from "@/lib/types";
 import { playAlertTone } from "@/lib/alert-tone";
 import styles from "./drill.module.css";
 
@@ -44,7 +50,13 @@ const PHASE_LABEL: Record<Phase, string> = {
   breakEnded: "Break over",
 };
 
-export function DrillPractice({ drill }: { drill: Drill }) {
+export function DrillPractice({
+  drill,
+  playerLevel,
+}: {
+  drill: Drill;
+  playerLevel: Level;
+}) {
   const router = useRouter();
 
   // — whether the timer is wanted at all —
@@ -386,6 +398,7 @@ export function DrillPractice({ drill }: { drill: Drill }) {
 
       <PerformanceSheet
         drill={drill}
+        playerLevel={playerLevel}
         practiceSeconds={savedPracticeSeconds}
         breakSeconds={savedBreakSeconds}
         onSaved={() => {
@@ -410,11 +423,13 @@ type Run = { balls: number; cleared: boolean };
 
 function PerformanceSheet({
   drill,
+  playerLevel,
   practiceSeconds,
   breakSeconds,
   onSaved,
 }: {
   drill: Drill;
+  playerLevel: Level;
   practiceSeconds: number;
   breakSeconds: number;
   onSaved: () => void;
@@ -434,6 +449,7 @@ function PerformanceSheet({
     return (
       <ShotAttemptSheet
         drill={drill}
+        playerLevel={playerLevel}
         practiceSeconds={practiceSeconds}
         breakSeconds={breakSeconds}
         onSaved={onSaved}
@@ -456,16 +472,20 @@ function PerformanceSheet({
 
 function ShotAttemptSheet({
   drill,
+  playerLevel,
   practiceSeconds,
   breakSeconds,
   onSaved,
 }: {
   drill: Drill;
+  playerLevel: Level;
   practiceSeconds: number;
   breakSeconds: number;
   onSaved: () => void;
 }) {
-  const total = Math.max(1, drill.sheet_config?.total_shots ?? 20);
+  // One drill, one row — the level moves the target, not the drill.
+  const total = Math.max(1, resolveShotTarget(drill.sheet_config, playerLevel));
+  const scalesWithLevel = hasLevelLadder(drill.sheet_config);
   const [shots, setShots] = useState<Shot[]>([]);
   const { saving, message, save } = useSaveSession();
 
@@ -504,6 +524,13 @@ function ShotAttemptSheet({
     <section className={styles.section}>
       <p className={styles.sectionLabel}>Performance sheet</p>
       <div className={styles.rule} aria-hidden="true" />
+
+      {scalesWithLevel && (
+        <p className={styles.levelTarget}>
+          {LEVEL_LABEL[playerLevel]}: {total} shots. The drill is the same at every
+          level — the target grows with it.
+        </p>
+      )}
 
       <div className={styles.sheet}>
         <div className={styles.tallyStatus}>

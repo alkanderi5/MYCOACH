@@ -43,12 +43,55 @@ export type Tag = {
  *    table is cleared without a miss, and there is no fixed shot count. */
 export type SheetType = "shot_attempt" | "progressive";
 
+/** A shot target is either one number for everybody, or a ladder keyed by
+ *  level so the same drill asks more of a stronger player. */
+export type ShotTarget = number | Partial<Record<Level, number>>;
+
 export type SheetConfig = {
   /** shot_attempt: how many shots make up one session. */
-  total_shots?: number;
+  total_shots?: ShotTarget;
   /** progressive: pots needed to clear the table, when it is a fixed number. */
   balls_per_rack?: number;
 };
+
+const FALLBACK_SHOTS = 20;
+
+/**
+ * How many shots this drill asks of a given player.
+ *
+ * A drill is one row whatever your level — only the target moves. Falls back
+ * down the ladder so a missing rung never leaves the sheet without a target.
+ */
+export function resolveShotTarget(
+  config: SheetConfig | null | undefined,
+  level: Level,
+): number {
+  const target = config?.total_shots;
+  if (typeof target === "number") return target;
+  if (!target) return FALLBACK_SHOTS;
+
+  const ladder: Level[] = ["beginner", "intermediate", "advanced"];
+  const fromLevel = target[level];
+  if (typeof fromLevel === "number") return fromLevel;
+
+  // Nearest rung below, then anything at all.
+  for (let i = ladder.indexOf(level) - 1; i >= 0; i--) {
+    const value = target[ladder[i]];
+    if (typeof value === "number") return value;
+  }
+  for (const rung of ladder) {
+    const value = target[rung];
+    if (typeof value === "number") return value;
+  }
+  return FALLBACK_SHOTS;
+}
+
+/** True when the drill asks different amounts of different players. */
+export function hasLevelLadder(config: SheetConfig | null | undefined): boolean {
+  const target = config?.total_shots;
+  if (!target || typeof target === "number") return false;
+  return new Set(Object.values(target).filter((v) => typeof v === "number")).size > 1;
+}
 
 /** @deprecated kept for older call sites; prefer SheetConfig. */
 export type ShotAttemptConfig = SheetConfig;

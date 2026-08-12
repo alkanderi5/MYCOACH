@@ -93,8 +93,11 @@ view can be linked to and shared.
 Sheets are tapped, not typed. The phone sits by the table, so the targets are
 large, the labels are one word, and every sheet has an undo.
 
-- `shot_attempt` — a fixed number of single shots. Made / missed per shot;
-  percentage = made ÷ recorded.
+- `shot_attempt` — single shots, made / missed per shot; percentage = made ÷
+  recorded. `total_shots` is a ladder keyed by level, so the same drill asks a
+  beginner for fewer shots than an advanced player. Resolve it through
+  `resolveShotTarget()` rather than reading the config directly — a plain
+  number is still valid and the helper handles both.
 - `progressive` — many balls per attempt, no fixed shot count. The attempt only
   counts when the table is cleared without a miss, so percentage = tables
   cleared ÷ attempts. With `balls_per_rack` set the attempt closes itself once
