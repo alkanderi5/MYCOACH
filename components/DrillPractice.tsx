@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowCounterClockwise,
   Check,
+  Clock,
   Coffee,
   Pause,
   Play,
@@ -28,6 +29,9 @@ type Phase =
   | "practiceEnded"
   | "breakEnded";
 
+/** Whether the player wants a timer at all: unanswered, yes, or no. */
+type TimerMode = "ask" | "on" | "off";
+
 const DEFAULT_PRACTICE_MINUTES = 20;
 const DEFAULT_BREAK_MINUTES = 5;
 
@@ -42,6 +46,15 @@ const PHASE_LABEL: Record<Phase, string> = {
 
 export function DrillPractice({ drill }: { drill: Drill }) {
   const router = useRouter();
+
+  // — whether the timer is wanted at all —
+  // Deliberately asked fresh each time rather than remembered: reading a stored
+  // preference during render would flash the question and then replace it.
+  const [timerMode, setTimerMode] = useState<TimerMode>("ask");
+
+  function chooseTimer(next: Exclude<TimerMode, "ask">) {
+    setTimerMode(next);
+  }
 
   // — timer state —
   const [practiceMinutes, setPracticeMinutes] = useState(String(DEFAULT_PRACTICE_MINUTES));
@@ -179,6 +192,50 @@ export function DrillPractice({ drill }: { drill: Drill }) {
         <p className={styles.sectionLabel}>Timer</p>
         <div className={styles.rule} aria-hidden="true" />
 
+        {/* The timer is offered, not imposed: plenty of practice is untimed,
+            and a full countdown panel is a lot of screen to scroll past when
+            you only came to record shots. */}
+        {timerMode === "ask" && (
+          <div className={styles.timerOffer}>
+            <p className={styles.timerOfferText}>
+              Want to time this session? You can set a practice length and a break, and
+              the app will tell you when each one ends.
+            </p>
+            <div className={styles.timerOfferActions}>
+              <button
+                type="button"
+                className={styles.buttonPrimary}
+                onClick={() => chooseTimer("on")}
+              >
+                <Clock size={15} weight="fill" />
+                Use a timer
+              </button>
+              <button
+                type="button"
+                className={styles.buttonSecondary}
+                onClick={() => chooseTimer("off")}
+              >
+                No timer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {timerMode === "off" && (
+          <div className={styles.timerOffRow}>
+            <span className={styles.timerOffText}>No timer for this session.</span>
+            <button
+              type="button"
+              className={styles.timerOffLink}
+              onClick={() => chooseTimer("on")}
+            >
+              <Clock size={13} />
+              Use a timer
+            </button>
+          </div>
+        )}
+
+        {timerMode === "on" && (
         <div className={styles.timer}>
           <div className={styles.durationRow}>
             <label className={styles.duration}>
@@ -311,7 +368,20 @@ export function DrillPractice({ drill }: { drill: Drill }) {
               )}
             </div>
           )}
+
+          {/* Only while nothing is running, so a session cannot be lost by
+              switching the timer off mid-count. */}
+          {phase === "idle" && (
+            <button
+              type="button"
+              className={styles.timerDismiss}
+              onClick={() => chooseTimer("off")}
+            >
+              Practise without a timer
+            </button>
+          )}
         </div>
+        )}
       </section>
 
       <PerformanceSheet

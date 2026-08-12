@@ -121,7 +121,10 @@ export function AuthForm({
           </p>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
+        {/* method="post" matters even though submission is handled in JS: if the
+            bundle fails to load, a native submit would otherwise be a GET, which
+            puts the password in the URL, the browser history and the server log. */}
+        <form onSubmit={handleSubmit} method="post" noValidate>
           <div className={styles.fields}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="email">

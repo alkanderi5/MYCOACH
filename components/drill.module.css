@@ -98,6 +98,73 @@
   border-radius: var(--radius-lg);
 }
 
+/* — the offer, shown before the timer takes any space — */
+
+.timerOffer {
+  margin-top: 22px;
+  padding: 22px;
+  border: 1px solid var(--color-neutral-700);
+  border-radius: var(--radius-lg);
+}
+
+.timerOfferText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-neutral-300);
+}
+
+.timerOfferActions {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+}
+
+/* — the compact state once the timer is declined — */
+
+.timerOffRow {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--color-neutral-800);
+  border-radius: var(--radius-md);
+}
+
+.timerOffText {
+  font-size: 13px;
+  color: var(--color-neutral-500);
+}
+
+.timerOffLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-accent-300);
+  transition: color 160ms ease-out;
+  flex: none;
+}
+
+.timerOffLink:hover {
+  color: var(--color-accent);
+}
+
+.timerDismiss {
+  display: block;
+  margin: 20px auto 0;
+  font-size: 12px;
+  color: var(--color-neutral-500);
+  transition: color 160ms ease-out;
+}
+
+.timerDismiss:hover {
+  color: var(--color-accent);
+}
+
 .durationRow {
   display: flex;
   gap: 14px;
