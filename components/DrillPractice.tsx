@@ -392,8 +392,12 @@ function PerformanceSheet({
 
         <div className={styles.result}>
           <span className={styles.resultLabel}>Success</span>
-          <span className={styles.resultValue}>
-            {percentage === null ? "—" : `${formatPercent(percentage)}%`}
+          <span
+            className={`${styles.resultValue} ${
+              percentage === null ? styles.resultValueEmpty : ""
+            }`}
+          >
+            {percentage === null ? "Not entered" : `${formatPercent(percentage)}%`}
           </span>
         </div>
 

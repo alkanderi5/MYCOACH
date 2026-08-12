@@ -233,21 +233,18 @@
   border-radius: var(--radius-lg);
 }
 
+/* No row rules: the inputs carry their own underline, so a divider as well
+   reads as a doubled line. A row without an underline is a computed value. */
 .sheetRow {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--color-neutral-700);
+  padding: 14px 0;
 }
 
 .sheetRow:first-child {
   padding-top: 0;
-}
-
-.sheetRow:last-of-type {
-  border-bottom: none;
 }
 
 .sheetLabel {
@@ -308,6 +305,12 @@
   letter-spacing: -0.03em;
   color: var(--color-accent-300);
   font-variant-numeric: tabular-nums;
+}
+
+/* An em dash at 38px reads as a rule, not a value. */
+.resultValueEmpty {
+  font-size: 20px;
+  color: var(--color-neutral-500);
 }
 
 .sheetMessage {
