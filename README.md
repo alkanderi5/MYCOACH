@@ -40,10 +40,24 @@ These are already filled in for the `mycoach` Supabase project.
 | `/` | Splash — holds ≥800ms, then routes by session |
 | `/login` | Email/password sign-in |
 | `/signup` | Account creation |
-| `/practice` | The seven practice categories |
+| `/practice` | Search, level, quick filters, personalized rows, categories |
 | `/practice/[category]` | Drills in that category |
 | `/practice/[category]/[drill]` | Drill info, timer, performance sheet, drill history |
+| `/library` | Every drill, with combinable filters and grouped results |
+| `/programs` | Training programs |
+| `/programs/[program]` | A program, week by week |
 | `/progress` | Overall progress, per-drill progress, full history |
+
+## Two ways in
+
+**Training programs** tell a player what to practise and in what order.
+**The drill library** is for players who want to choose for themselves. Both
+surface the same drill rows.
+
+Every row on the Practice page is computed from the player's own saved
+sessions — what they practised last, what they have not tried at their level,
+where their averages are lowest. Rows with nothing in them render nothing at
+all rather than an empty shelf.
 
 `proxy.ts` guards every route outside `/`, `/login` and `/signup`, and bounces a
 signed-in player away from the auth screens.
@@ -52,10 +66,18 @@ signed-in player away from the auth screens.
 
 | Table | Purpose |
 | --- | --- |
-| `profiles` | One row per player, created automatically on signup |
+| `profiles` | One row per player, created automatically on signup; holds their level |
 | `categories` | The seven confirmed categories |
-| `drills` | Drill content + which performance sheet it uses |
+| `drills` | Drill content, level, difficulty, duration, and which sheet it uses |
+| `tags` / `drill_tags` | Skill, shot type, goal, game and equipment — many per drill |
 | `practice_sessions` | One saved session: player, category, drill, date/time, duration, sheet values, calculated percentage |
+| `drill_favourites` | Saved drills, private to the player |
+| `programs` / `program_items` | Training programs; items reference shared drill rows |
+| `program_enrollments` | Which programs a player is following |
+| `coach_assignments` | Schema only — no coach role or UI is built in Phase 1 |
+
+**One drill is one row.** A drill is never duplicated to appear in another
+category, program or search result; everything joins back to the same row.
 
 **Privacy.** RLS is on for all four tables. A player can read and write only
 their own `profiles` row and their own `practice_sessions`. `categories` and
@@ -104,12 +126,17 @@ figures are computed from saved records only — nothing is generated or inferre
 
 ## Content still needed from the project owner
 
-The catalogue ships with the seven categories and the one confirmed drill
-(**Behind the Wall**, under Safety Shots). Its content fields are intentionally
-empty — the app renders "Awaiting content from the project owner" wherever copy
-is missing, and a placeholder frame where the setup image will go.
+The catalogue ships with 22 drills across the seven categories and three
+levels, plus three training programs. **All of this copy is a draft** — it
+carries `content_status = 'draft'`, and each drill page says so. It exists so
+the library, filters and programs have something real to organise. Replace or
+approve it before players see it, then set `content_status = 'approved'`.
 
-For each drill, supply: name, setup image, explanation, skill learned,
-improvement target, instructions, optional video URL, and which performance
-sheet it uses. Rows can be added in the Supabase dashboard (`drills` table) or
-via a seed migration.
+Still missing entirely, and not invented anywhere:
+
+- **Setup images** for every drill — the page shows a dashed placeholder.
+- **Instructional videos** — the section is hidden until a `video_url` exists.
+- **Sheet designs** beyond the confirmed shot-attempt sheet.
+
+Rows can be edited in the Supabase dashboard (`drills`, `tags`, `drill_tags`,
+`programs`, `program_items`) or via a migration.

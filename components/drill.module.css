@@ -1,5 +1,23 @@
 /* Drill detail, timer and performance sheet. */
 
+.attributes {
+  margin-top: 12px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral-400);
+}
+
+.draftNotice {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px dashed var(--color-neutral-700);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-neutral-500);
+}
+
 .section {
   margin-top: 42px;
 }

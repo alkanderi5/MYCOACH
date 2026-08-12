@@ -8,8 +8,22 @@ social features or AI that it does not name. In particular Phase 1 excludes:
 coach accounts/dashboards/notes, AI assistant, AI feedback, monthly reports,
 non-billiards subjects, and social sign-in.
 
-Drill names, copy, imagery and sheet designs come from the project owner. Where
-content is missing the UI says so — never invent drill content to fill a gap.
+Two parts of the brief have since been revised by the project owner:
+
+- **Drill copy.** The brief reserved all drill wording for the owner. They have
+  since asked for drafted content, so the catalogue ships with copy written to
+  get the library moving. Anything written this way carries
+  `content_status = 'draft'` and says so on the drill page. Never quietly
+  promote a row to `'approved'` — that is the owner's call. Imagery and video
+  are still entirely theirs; missing ones show a placeholder rather than a
+  substitute.
+- **Coach features.** Still excluded from the UI, but `coach_assignments` and
+  `drills.coach_recommended` exist so the data has somewhere to live. Do not
+  build a coach role, dashboard or authoring UI without asking.
+
+The seven categories named in the brief are still the categories. The nine
+skill groups the owner later described are **tags**, not a replacement
+taxonomy — that was their explicit choice.
 
 ## Design system
 
@@ -42,6 +56,26 @@ doesn't describe.
   `components/`.
 - Never trust the client for privacy: `practice_sessions` is protected by RLS,
   and queries rely on it rather than filtering by player id in the UI.
+
+## How drills are organised
+
+One drill is **one row**. It is never copied to appear in another list.
+
+- `drills` carries the single-valued attributes: category, level, difficulty,
+  duration, sheet type.
+- `tags` + `drill_tags` carry everything a drill can have several of: skill,
+  shot type, goal, game, equipment. This is what lets one drill answer many
+  different searches.
+- `program_items` point at drill rows, so a drill used by three programs — or
+  by two weeks of the same program — is still one row.
+
+Filtering lives in `lib/drills.ts`. Column filters run in Postgres; tag filters
+are intersected in code, because a PostgREST join matches a row when *any*
+linked tag matches, not all of them. Keep that split unless the catalogue grows
+enough to justify a database function.
+
+The library is URL-driven — every filter is a query parameter — so a filtered
+view can be linked to and shared.
 
 ## Adding a new performance sheet
 

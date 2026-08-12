@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { AppShell } from "@/components/AppShell";
 import { DrillPractice } from "@/components/DrillPractice";
+import { FavouriteButton } from "@/components/FavouriteButton";
 import { createClient } from "@/lib/supabase/server";
-import type { Drill, PracticeSession } from "@/lib/types";
+import { LEVEL_LABEL, tagsOf, type DrillCard, type PracticeSession } from "@/lib/types";
 import shell from "@/components/shell.module.css";
 import styles from "@/components/drill.module.css";
+import browse from "@/components/browse.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -28,21 +30,30 @@ export default async function DrillPage({
 
   const { data: drill } = await supabase
     .from("drills")
-    .select("*")
+    .select("*, categories(name, slug), drill_tags(tags(id, kind, name, slug, position))")
     .eq("category_id", category.id)
     .eq("slug", drillSlug)
-    .maybeSingle<Drill>();
+    .maybeSingle<DrillCard>();
 
   if (!drill) notFound();
 
-  // RLS keeps this to the signed-in player's own sessions.
-  const { data: sessions } = await supabase
-    .from("practice_sessions")
-    .select("*")
-    .eq("drill_id", drill.id)
-    .order("performed_at", { ascending: false })
-    .limit(10)
-    .returns<PracticeSession[]>();
+  // RLS keeps both of these to the signed-in player's own rows.
+  const [{ data: sessions }, { data: favourite }] = await Promise.all([
+    supabase
+      .from("practice_sessions")
+      .select("*")
+      .eq("drill_id", drill.id)
+      .order("performed_at", { ascending: false })
+      .limit(10)
+      .returns<PracticeSession[]>(),
+    supabase
+      .from("drill_favourites")
+      .select("drill_id")
+      .eq("drill_id", drill.id)
+      .maybeSingle(),
+  ]);
+
+  const tags = tagsOf(drill);
 
   return (
     <AppShell active="practice">
@@ -53,6 +64,31 @@ export default async function DrillPage({
 
       <p className={shell.kicker}>{category.name}</p>
       <h1 className={shell.title}>{drill.name}</h1>
+
+      <p className={styles.attributes}>
+        {LEVEL_LABEL[drill.level]} · Difficulty {drill.difficulty}/5 ·{" "}
+        {drill.duration_minutes} min
+      </p>
+
+      <div className={browse.chipRow}>
+        <FavouriteButton drillId={drill.id} initiallySaved={Boolean(favourite)} />
+        {tags.map((tag) => (
+          <Link
+            key={tag.id}
+            href={`/library?${tagParam(tag.kind)}=${tag.slug}`}
+            className={browse.chip}
+          >
+            {tag.name}
+          </Link>
+        ))}
+      </div>
+
+      {drill.content_status === "draft" && (
+        <p className={styles.draftNotice}>
+          This drill&apos;s wording is a draft written to get the library moving. Replace or
+          approve it before it goes to players.
+        </p>
+      )}
 
       {/* — setup — */}
       <section className={styles.section}>
@@ -164,4 +200,10 @@ function formatDuration(totalSeconds: number) {
 
 function formatPercent(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+/** Tag kinds map to the library's query parameter names. */
+function tagParam(kind: string) {
+  if (kind === "shot_type") return "shotType";
+  return kind;
 }

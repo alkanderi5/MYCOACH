@@ -2,11 +2,20 @@ import Link from "next/link";
 import { SignOutButton } from "./SignOutButton";
 import styles from "./shell.module.css";
 
+type Section = "practice" | "library" | "programs" | "progress";
+
+const NAV: { href: string; label: string; section: Section }[] = [
+  { href: "/practice", label: "Practice", section: "practice" },
+  { href: "/library", label: "Library", section: "library" },
+  { href: "/programs", label: "Programs", section: "programs" },
+  { href: "/progress", label: "Progress", section: "progress" },
+];
+
 export function AppShell({
   active,
   children,
 }: {
-  active: "practice" | "progress";
+  active: Section;
   children: React.ReactNode;
 }) {
   return (
@@ -15,20 +24,20 @@ export function AppShell({
         <Link href="/practice" className={styles.brand}>
           Mycoach
         </Link>
-        <Link
-          href="/practice"
-          className={`${styles.navLink} ${active === "practice" ? styles.navLinkActive : ""}`}
-          aria-current={active === "practice" ? "page" : undefined}
-        >
-          Practice
-        </Link>
-        <Link
-          href="/progress"
-          className={`${styles.navLink} ${active === "progress" ? styles.navLinkActive : ""}`}
-          aria-current={active === "progress" ? "page" : undefined}
-        >
-          Progress
-        </Link>
+        <nav className={styles.nav}>
+          {NAV.map((item) => (
+            <Link
+              key={item.section}
+              href={item.href}
+              className={`${styles.navLink} ${
+                active === item.section ? styles.navLinkActive : ""
+              }`}
+              aria-current={active === item.section ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
         <SignOutButton />
       </header>
       <main className={styles.content}>{children}</main>

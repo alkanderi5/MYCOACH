@@ -10,7 +10,8 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 14px 20px;
   padding: calc(26px + env(safe-area-inset-top)) 34px 0;
 }
 
@@ -21,6 +22,21 @@
   text-transform: uppercase;
   color: var(--color-text);
   margin-right: auto;
+}
+
+/* Four sections plus sign-out will not fit one 402px row, so on a phone the
+   nav drops to its own line rather than pushing the first links off-screen. */
+.nav {
+  order: 3;
+  flex-basis: 100%;
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
 }
 
 .navLink {
@@ -172,5 +188,12 @@
     max-width: 720px;
     width: 100%;
     margin-inline: auto;
+  }
+
+  /* Room for one row again. */
+  .nav {
+    order: 0;
+    flex-basis: auto;
+    justify-content: flex-end;
   }
 }
