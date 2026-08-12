@@ -37,11 +37,21 @@ export type Tag = {
   position: number;
 };
 
-/** The performance-sheet structures a drill may carry. Only 'shot_attempt' is
- *  confirmed by the project owner; further types are added as they arrive. */
-export type SheetType = "shot_attempt";
+/** The performance-sheet structures a drill may carry.
+ *  - 'shot_attempt' — a fixed number of single shots, each made or missed.
+ *  - 'progressive'  — many balls per attempt; the attempt only counts when the
+ *    table is cleared without a miss, and there is no fixed shot count. */
+export type SheetType = "shot_attempt" | "progressive";
 
-export type ShotAttemptConfig = { total_shots: number };
+export type SheetConfig = {
+  /** shot_attempt: how many shots make up one session. */
+  total_shots?: number;
+  /** progressive: pots needed to clear the table, when it is a fixed number. */
+  balls_per_rack?: number;
+};
+
+/** @deprecated kept for older call sites; prefer SheetConfig. */
+export type ShotAttemptConfig = SheetConfig;
 
 export type Drill = {
   id: string;
@@ -55,7 +65,7 @@ export type Drill = {
   instructions: string | null;
   video_url: string | null;
   sheet_type: SheetType;
-  sheet_config: ShotAttemptConfig;
+  sheet_config: SheetConfig;
   position: number;
   is_placeholder: boolean;
   level: Level;
@@ -74,12 +84,24 @@ export type DrillCard = Drill & {
   drill_tags: { tags: Tag }[];
 };
 
-/** Values recorded on the confirmed shot-attempt sheet. */
+/** Values recorded on the shot-attempt sheet. */
 export type ShotAttemptPerformance = {
   total_shots: number;
   successful_shots: number;
   failed_shots: number;
 };
+
+/** Values recorded on the progressive sheet. `runs` holds the number of balls
+ *  potted in each attempt, so a session keeps its shape and not just a total. */
+export type ProgressivePerformance = {
+  attempts: number;
+  clearances: number;
+  best_run: number;
+  total_balls: number;
+  runs: number[];
+};
+
+export type Performance = ShotAttemptPerformance | ProgressivePerformance;
 
 export type PracticeSession = {
   id: string;
@@ -90,9 +112,24 @@ export type PracticeSession = {
   practice_duration_seconds: number;
   break_duration_seconds: number;
   sheet_type: SheetType;
-  performance: ShotAttemptPerformance;
+  performance: Performance;
   result_percentage: number | null;
 };
+
+/** One-line summary of a saved session, whichever sheet produced it. */
+export function describePerformance(session: {
+  sheet_type: SheetType;
+  performance: Performance;
+}): string {
+  const p = session.performance;
+  if (session.sheet_type === "progressive" && "attempts" in p) {
+    return `${p.clearances}/${p.attempts} cleared · best run ${p.best_run}`;
+  }
+  if ("total_shots" in p && p.total_shots) {
+    return `${p.successful_shots}/${p.total_shots}`;
+  }
+  return "";
+}
 
 export type Program = {
   id: string;

@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
-import type { PracticeSession } from "@/lib/types";
+import { describePerformance, type PracticeSession } from "@/lib/types";
 import shell from "@/components/shell.module.css";
 import styles from "@/components/progress.module.css";
 
@@ -193,9 +193,7 @@ export default async function ProgressPage() {
                 <p className={styles.historyMeta}>
                   {formatDateTime(session.performed_at)} ·{" "}
                   {formatDurationShort(session.practice_duration_seconds)}
-                  {session.performance?.total_shots
-                    ? ` · ${session.performance.successful_shots}/${session.performance.total_shots}`
-                    : ""}
+                  {describePerformance(session) ? ` · ${describePerformance(session)}` : ""}
                 </p>
               </div>
               <span className={styles.historyResult}>

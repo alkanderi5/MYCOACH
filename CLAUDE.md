@@ -34,8 +34,13 @@ values in it are binding. The `:root` block in `app/globals.css` is lifted from
 Rules that are easy to break by accident:
 
 - Build from the CSS variables. No hard-coded colours, and nothing outside the
-  token list — no pure black, no pure white, no red (the palette is mono; an
-  invalid field takes an accent underline plus a message, never a red one).
+  token list — no pure black, no pure white.
+- `--color-made` and `--color-miss` were added at the project owner's request
+  for the tally buttons, and are the **only** sanctioned green and red. They
+  mean "this shot went in" / "it did not" and nothing else: an invalid form
+  field still takes an accent underline plus a message, never `--color-miss`.
+  Never let either colour be the only signal — the tally buttons pair them with
+  an icon and a word so they read for a colour-blind player.
 - Font weight ceiling is **500**.
 - The primary button is **outlined at rest** — never a solid fill until hover.
 - Focus is the global `:focus-visible` accent ring, never the browser default.
@@ -77,12 +82,31 @@ enough to justify a database function.
 The library is URL-driven — every filter is a query parameter — so a filtered
 view can be linked to and shared.
 
-## Adding a new performance sheet
+## Performance sheets
 
-1. Add the type to `SheetType` in `lib/types.ts` and give it a performance shape.
-2. Render it in `PerformanceSheet` in `components/DrillPractice.tsx` — the
-   component already falls back to a "not supplied yet" panel for unknown types.
-3. Set `sheet_type` / `sheet_config` on the drill row.
+Sheets are tapped, not typed. The phone sits by the table, so the targets are
+large, the labels are one word, and every sheet has an undo.
+
+- `shot_attempt` — a fixed number of single shots. Made / missed per shot;
+  percentage = made ÷ recorded.
+- `progressive` — many balls per attempt, no fixed shot count. The attempt only
+  counts when the table is cleared without a miss, so percentage = tables
+  cleared ÷ attempts. With `balls_per_rack` set the attempt closes itself once
+  the rack is cleared; without it the player taps "table cleared".
+
+**Every tally handler must be a functional state update.** Taps arrive faster
+than React re-renders, and computing the next value from a captured variable
+silently drops all but one tap of a quick run. This was a real bug once.
+
+### Adding a new sheet
+
+1. Add the type to `SheetType` in `lib/types.ts` and give it a performance shape
+   in the `Performance` union.
+2. Teach `describePerformance()` how to summarise it — history rows and the
+   progress screen both go through it.
+3. Render it from `PerformanceSheet` in `components/DrillPractice.tsx`, which
+   falls back to a "not supplied yet" panel for unknown types.
+4. Set `sheet_type` / `sheet_config` on the drill row.
 
 The saved percentage is only meaningful for sheets that produce one; leave
 `result_percentage` null for sheets that don't.

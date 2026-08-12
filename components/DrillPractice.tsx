@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coffee, Pause, Play, Stop } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwise,
+  Check,
+  Coffee,
+  Pause,
+  Play,
+  Stop,
+  Trophy,
+  X,
+} from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { Drill } from "@/lib/types";
 import { playAlertTone } from "@/lib/alert-tone";
@@ -323,6 +332,12 @@ export function DrillPractice({ drill }: { drill: Drill }) {
 
 /* ── Performance sheet ──────────────────────────────────────────────────── */
 
+/** One recorded shot on the shot-attempt sheet. */
+type Shot = "made" | "miss";
+
+/** One finished attempt on the progressive sheet. */
+type Run = { balls: number; cleared: boolean };
+
 function PerformanceSheet({
   drill,
   practiceSeconds,
@@ -334,40 +349,413 @@ function PerformanceSheet({
   breakSeconds: number;
   onSaved: () => void;
 }) {
-  const configuredTotal = drill.sheet_config?.total_shots ?? 20;
-
-  const [totalShots, setTotalShots] = useState(String(configuredTotal));
-  const [successful, setSuccessful] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-
-  if (drill.sheet_type !== "shot_attempt") {
+  if (drill.sheet_type === "progressive") {
     return (
-      <section className={styles.section}>
-        <p className={styles.sectionLabel}>Performance</p>
-        <div className={styles.rule} aria-hidden="true" />
-        <p className={styles.unsupported}>
-          This drill uses a performance sheet the project owner has not supplied yet.
-        </p>
-      </section>
+      <ProgressiveSheet
+        drill={drill}
+        practiceSeconds={practiceSeconds}
+        breakSeconds={breakSeconds}
+        onSaved={onSaved}
+      />
     );
   }
 
-  const total = Number(totalShots);
-  const made = Number(successful);
-  const totalValid = Number.isInteger(total) && total > 0;
-  const madeEntered = successful.trim() !== "";
-  const madeValid =
-    madeEntered && Number.isInteger(made) && made >= 0 && (!totalValid || made <= total);
+  if (drill.sheet_type === "shot_attempt") {
+    return (
+      <ShotAttemptSheet
+        drill={drill}
+        practiceSeconds={practiceSeconds}
+        breakSeconds={breakSeconds}
+        onSaved={onSaved}
+      />
+    );
+  }
 
-  const failed = totalValid && madeValid ? total - made : null;
-  const percentage = totalValid && madeValid ? (made / total) * 100 : null;
+  return (
+    <section className={styles.section}>
+      <p className={styles.sectionLabel}>Performance</p>
+      <div className={styles.rule} aria-hidden="true" />
+      <p className={styles.unsupported}>
+        This drill uses a performance sheet the project owner has not supplied yet.
+      </p>
+    </section>
+  );
+}
 
-  const canSave = totalValid && madeValid && !saving;
+/* — shot attempt: a fixed number of single shots — */
+
+function ShotAttemptSheet({
+  drill,
+  practiceSeconds,
+  breakSeconds,
+  onSaved,
+}: {
+  drill: Drill;
+  practiceSeconds: number;
+  breakSeconds: number;
+  onSaved: () => void;
+}) {
+  const total = Math.max(1, drill.sheet_config?.total_shots ?? 20);
+  const [shots, setShots] = useState<Shot[]>([]);
+  const { saving, message, save } = useSaveSession();
+
+  const made = shots.filter((s) => s === "made").length;
+  const missed = shots.length - made;
+  const remaining = Math.max(0, total - shots.length);
+  const percentage = shots.length > 0 ? (made / shots.length) * 100 : null;
+  const complete = shots.length >= total;
+
+  function record(shot: Shot) {
+    // Functional update: taps come fast at the table and React batches them,
+    // so the limit has to be checked against the queued value, not a closure.
+    setShots((current) => (current.length >= total ? current : [...current, shot]));
+  }
 
   async function handleSave() {
-    if (!canSave || percentage === null || failed === null) return;
+    if (shots.length === 0) return;
+    await save({
+      drill,
+      practiceSeconds,
+      breakSeconds,
+      performance: {
+        total_shots: shots.length,
+        successful_shots: made,
+        failed_shots: missed,
+      },
+      percentage: (made / shots.length) * 100,
+      onSaved: () => {
+        setShots([]);
+        onSaved();
+      },
+    });
+  }
 
+  return (
+    <section className={styles.section}>
+      <p className={styles.sectionLabel}>Performance sheet</p>
+      <div className={styles.rule} aria-hidden="true" />
+
+      <div className={styles.sheet}>
+        <div className={styles.tallyStatus}>
+          <span className={styles.tallyProgress}>
+            {complete
+              ? `All ${total} shots recorded`
+              : `Shot ${shots.length + 1} of ${total}`}
+          </span>
+          <button
+            type="button"
+            className={styles.tallyUndo}
+            onClick={() => setShots((current) => current.slice(0, -1))}
+            disabled={shots.length === 0}
+          >
+            <ArrowCounterClockwise size={13} />
+            Undo
+          </button>
+        </div>
+
+        <div className={styles.tallyRow}>
+          <button
+            type="button"
+            className={`${styles.tally} ${styles.tallyMade}`}
+            onClick={() => record("made")}
+            disabled={complete}
+          >
+            <Check size={26} weight="bold" />
+            <span className={styles.tallyCount}>{made}</span>
+            Made
+          </button>
+          <button
+            type="button"
+            className={`${styles.tally} ${styles.tallyMiss}`}
+            onClick={() => record("miss")}
+            disabled={complete}
+          >
+            <X size={26} weight="bold" />
+            <span className={styles.tallyCount}>{missed}</span>
+            Missed
+          </button>
+        </div>
+
+        {shots.length > 0 && (
+          <div className={styles.shotStrip} aria-hidden="true">
+            {shots.map((shot, index) => (
+              <span
+                key={index}
+                className={`${styles.shotPip} ${
+                  shot === "made" ? styles.shotPipMade : styles.shotPipMiss
+                }`}
+              />
+            ))}
+            {Array.from({ length: remaining }, (_, index) => (
+              <span key={`rest-${index}`} className={styles.shotPip} />
+            ))}
+          </div>
+        )}
+
+        <div className={styles.result}>
+          <span className={styles.resultLabel}>Success</span>
+          <span
+            className={`${styles.resultValue} ${
+              percentage === null ? styles.resultValueEmpty : ""
+            }`}
+          >
+            {percentage === null ? "Not started" : `${formatPercent(percentage)}%`}
+          </span>
+        </div>
+
+        {message && (
+          <p className={styles.sheetMessage} role="status">
+            {message}
+          </p>
+        )}
+
+        <button
+          type="button"
+          className={styles.saveButton}
+          onClick={handleSave}
+          disabled={shots.length === 0 || saving}
+        >
+          {saving ? "Saving…" : `Save ${shots.length} shot${shots.length === 1 ? "" : "s"}`}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* — progressive: many balls, and the attempt only counts when the table is
+     cleared without a miss — */
+
+function ProgressiveSheet({
+  drill,
+  practiceSeconds,
+  breakSeconds,
+  onSaved,
+}: {
+  drill: Drill;
+  practiceSeconds: number;
+  breakSeconds: number;
+  onSaved: () => void;
+}) {
+  const perRack = drill.sheet_config?.balls_per_rack;
+  // Runs and the open run live in one piece of state so every tap can be a
+  // pure functional update. Tapping quickly through a run would otherwise
+  // batch several taps against the same stale value and lose all but one.
+  const [tally, setTally] = useState<{ runs: Run[]; current: number }>({
+    runs: [],
+    current: 0,
+  });
+  const { runs, current } = tally;
+  const { saving, message, save } = useSaveSession();
+
+  const attempts = runs.length;
+  const clearances = runs.filter((run) => run.cleared).length;
+  const bestRun = runs.reduce((best, run) => Math.max(best, run.balls), current);
+  const totalBalls = runs.reduce((sum, run) => sum + run.balls, 0) + current;
+  const percentage = attempts > 0 ? (clearances / attempts) * 100 : null;
+
+  /** A pot. When the rack size is known, clearing it closes the attempt. */
+  function pot() {
+    setTally((state) => {
+      const next = state.current + 1;
+      if (perRack && next >= perRack) {
+        return {
+          runs: [...state.runs, { balls: next, cleared: true }],
+          current: 0,
+        };
+      }
+      return { ...state, current: next };
+    });
+  }
+
+  function miss() {
+    setTally((state) => ({
+      runs: [...state.runs, { balls: state.current, cleared: false }],
+      current: 0,
+    }));
+  }
+
+  function clearTable() {
+    setTally((state) =>
+      state.current === 0
+        ? state
+        : { runs: [...state.runs, { balls: state.current, cleared: true }], current: 0 },
+    );
+  }
+
+  /** Undo steps back through the open run first, then reopens the last
+   *  finished attempt. */
+  function undo() {
+    setTally((state) => {
+      if (state.current > 0) return { ...state, current: state.current - 1 };
+      const last = state.runs.at(-1);
+      if (!last) return state;
+      return { runs: state.runs.slice(0, -1), current: last.balls };
+    });
+  }
+
+  async function handleSave() {
+    if (attempts === 0) return;
+    await save({
+      drill,
+      practiceSeconds,
+      breakSeconds,
+      performance: {
+        attempts,
+        clearances,
+        best_run: runs.reduce((best, run) => Math.max(best, run.balls), 0),
+        total_balls: runs.reduce((sum, run) => sum + run.balls, 0),
+        runs: runs.map((run) => run.balls),
+      },
+      percentage: (clearances / attempts) * 100,
+      onSaved: () => {
+        setTally({ runs: [], current: 0 });
+        onSaved();
+      },
+    });
+  }
+
+  return (
+    <section className={styles.section}>
+      <p className={styles.sectionLabel}>Performance sheet</p>
+      <div className={styles.rule} aria-hidden="true" />
+
+      <div className={styles.sheet}>
+        <div className={styles.tallyStatus}>
+          <span className={styles.tallyProgress}>
+            {perRack
+              ? `Attempt ${attempts + 1} · ${current} of ${perRack} potted`
+              : `Attempt ${attempts + 1} · ${current} potted`}
+          </span>
+          <button
+            type="button"
+            className={styles.tallyUndo}
+            onClick={undo}
+            disabled={current === 0 && runs.length === 0}
+          >
+            <ArrowCounterClockwise size={13} />
+            Undo
+          </button>
+        </div>
+
+        <div className={styles.tallyRow}>
+          <button
+            type="button"
+            className={`${styles.tally} ${styles.tallyMade}`}
+            onClick={pot}
+          >
+            <Check size={26} weight="bold" />
+            <span className={styles.tallyCount}>{current}</span>
+            Potted
+          </button>
+          <button
+            type="button"
+            className={`${styles.tally} ${styles.tallyMiss}`}
+            onClick={miss}
+          >
+            <X size={26} weight="bold" />
+            <span className={styles.tallyCount}>{attempts - clearances}</span>
+            Missed
+          </button>
+        </div>
+
+        {/* With no fixed rack size the player says when the table is clear. */}
+        {!perRack && (
+          <button
+            type="button"
+            className={styles.tallyWide}
+            onClick={clearTable}
+            disabled={current === 0}
+          >
+            <Trophy size={16} weight="fill" />
+            Table cleared
+          </button>
+        )}
+
+        {(runs.length > 0 || current > 0) && (
+          <div className={styles.runStrip}>
+            {runs.map((run, index) => (
+              <span
+                key={index}
+                className={`${styles.runPip} ${run.cleared ? styles.runPipCleared : ""}`}
+                title={run.cleared ? "Cleared" : "Missed"}
+              >
+                {run.balls}
+              </span>
+            ))}
+            {current > 0 && (
+              <span className={`${styles.runPip} ${styles.runPipCurrent}`}>{current}</span>
+            )}
+          </div>
+        )}
+
+        <div className={styles.sheetRow}>
+          <span className={styles.sheetLabel}>Tables cleared</span>
+          <span className={styles.sheetValue}>
+            {clearances} of {attempts}
+          </span>
+        </div>
+        <div className={styles.sheetRow}>
+          <span className={styles.sheetLabel}>Best run</span>
+          <span className={styles.sheetValue}>{bestRun}</span>
+        </div>
+        <div className={styles.sheetRow}>
+          <span className={styles.sheetLabel}>Balls potted</span>
+          <span className={styles.sheetValue}>{totalBalls}</span>
+        </div>
+
+        <div className={styles.result}>
+          <span className={styles.resultLabel}>Cleared</span>
+          <span
+            className={`${styles.resultValue} ${
+              percentage === null ? styles.resultValueEmpty : ""
+            }`}
+          >
+            {percentage === null ? "Not started" : `${formatPercent(percentage)}%`}
+          </span>
+        </div>
+
+        {message && (
+          <p className={styles.sheetMessage} role="status">
+            {message}
+          </p>
+        )}
+
+        <button
+          type="button"
+          className={styles.saveButton}
+          onClick={handleSave}
+          disabled={attempts === 0 || saving}
+        >
+          {saving
+            ? "Saving…"
+            : `Save ${attempts} attempt${attempts === 1 ? "" : "s"}`}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* — shared save path — */
+
+function useSaveSession() {
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function save({
+    drill,
+    practiceSeconds,
+    breakSeconds,
+    performance,
+    percentage,
+    onSaved,
+  }: {
+    drill: Drill;
+    practiceSeconds: number;
+    breakSeconds: number;
+    performance: Record<string, unknown>;
+    percentage: number;
+    onSaved: () => void;
+  }) {
     setSaving(true);
     setMessage("");
 
@@ -388,12 +776,8 @@ function PerformanceSheet({
       drill_id: drill.id,
       practice_duration_seconds: practiceSeconds,
       break_duration_seconds: breakSeconds,
-      sheet_type: "shot_attempt",
-      performance: {
-        total_shots: total,
-        successful_shots: made,
-        failed_shots: failed,
-      },
+      sheet_type: drill.sheet_type,
+      performance,
       result_percentage: Number(percentage.toFixed(2)),
     });
 
@@ -404,95 +788,11 @@ function PerformanceSheet({
       return;
     }
 
-    setSuccessful("");
-    setTotalShots(String(configuredTotal));
     setMessage("Session saved.");
     onSaved();
   }
 
-  return (
-    <section className={styles.section}>
-      <p className={styles.sectionLabel}>Performance sheet</p>
-      <div className={styles.rule} aria-hidden="true" />
-
-      <div className={styles.sheet}>
-        <div className={styles.sheetRow}>
-          <label className={styles.sheetLabel} htmlFor="total-shots">
-            Total shots attempted
-          </label>
-          <input
-            id="total-shots"
-            className={`${styles.sheetInput} ${!totalValid ? styles.sheetInputInvalid : ""}`}
-            type="number"
-            min={1}
-            inputMode="numeric"
-            value={totalShots}
-            onChange={(e) => setTotalShots(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.sheetRow}>
-          <label className={styles.sheetLabel} htmlFor="successful-shots">
-            Successful shots
-          </label>
-          <input
-            id="successful-shots"
-            className={`${styles.sheetInput} ${
-              madeEntered && !madeValid ? styles.sheetInputInvalid : ""
-            }`}
-            type="number"
-            min={0}
-            max={totalValid ? total : undefined}
-            inputMode="numeric"
-            value={successful}
-            onChange={(e) => setSuccessful(e.target.value)}
-            aria-describedby="sheet-message"
-          />
-        </div>
-
-        <div className={styles.sheetRow}>
-          <span className={styles.sheetLabel}>Failed shots</span>
-          <span className={styles.sheetValue}>{failed ?? "—"}</span>
-        </div>
-
-        <div className={styles.result}>
-          <span className={styles.resultLabel}>Success</span>
-          <span
-            className={`${styles.resultValue} ${
-              percentage === null ? styles.resultValueEmpty : ""
-            }`}
-          >
-            {percentage === null ? "Not entered" : `${formatPercent(percentage)}%`}
-          </span>
-        </div>
-
-        {(madeEntered && !madeValid) || !totalValid ? (
-          <p className={styles.sheetMessage} id="sheet-message">
-            {!totalValid
-              ? "Total shots must be a whole number above zero."
-              : made > total
-                ? "Successful shots can't be more than the total attempted."
-                : "Successful shots must be a whole number of zero or more."}
-          </p>
-        ) : (
-          message && (
-            <p className={styles.sheetMessage} id="sheet-message" role="status">
-              {message}
-            </p>
-          )
-        )}
-
-        <button
-          type="button"
-          className={styles.saveButton}
-          onClick={handleSave}
-          disabled={!canSave}
-        >
-          {saving ? "Saving…" : "Save session"}
-        </button>
-      </div>
-    </section>
-  );
+  return { saving, message, save };
 }
 
 /* ── helpers ────────────────────────────────────────────────────────────── */

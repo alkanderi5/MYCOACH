@@ -313,6 +313,178 @@
   border-bottom-color: var(--color-accent);
 }
 
+/* — tally buttons —
+   Sized to be hit without looking closely, with the phone propped by the
+   table. Colour is never the only signal: each carries an icon and a word. */
+
+.tallyRow {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tally {
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background-color 160ms ease-out, color 160ms ease-out,
+    border-color 160ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.tallyMade {
+  border-color: var(--color-made);
+  color: var(--color-made);
+  background: color-mix(in srgb, var(--color-made) 14%, transparent);
+}
+
+.tallyMade:hover:not(:disabled),
+.tallyMade:active:not(:disabled) {
+  background: var(--color-made);
+  color: var(--color-bg);
+}
+
+.tallyMiss {
+  border-color: var(--color-miss);
+  color: var(--color-miss);
+  background: color-mix(in srgb, var(--color-miss) 14%, transparent);
+}
+
+.tallyMiss:hover:not(:disabled),
+.tallyMiss:active:not(:disabled) {
+  background: var(--color-miss);
+  color: var(--color-bg);
+}
+
+.tallyCount {
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Full-width action under the pair, e.g. "table cleared". */
+.tallyWide {
+  margin-top: 12px;
+  min-height: 62px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-made);
+  color: var(--color-made);
+  background: color-mix(in srgb, var(--color-made) 10%, transparent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.tallyWide:hover:not(:disabled),
+.tallyWide:active:not(:disabled) {
+  background: var(--color-made);
+  color: var(--color-bg);
+}
+
+/* — running state above the buttons — */
+
+.tallyStatus {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tallyProgress {
+  font-size: 13px;
+  color: var(--color-neutral-300);
+  font-variant-numeric: tabular-nums;
+}
+
+.tallyUndo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-neutral-400);
+  transition: color 160ms ease-out;
+}
+
+.tallyUndo:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.runStrip {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.runPip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-neutral-700);
+  font-size: 12px;
+  color: var(--color-neutral-400);
+  font-variant-numeric: tabular-nums;
+}
+
+.runPipCleared {
+  border-color: var(--color-made);
+  color: var(--color-made);
+}
+
+.runPipCurrent {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.shotStrip {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.shotPip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--color-neutral-700);
+}
+
+.shotPipMade {
+  border-color: var(--color-made);
+  background: var(--color-made);
+}
+
+.shotPipMiss {
+  border-color: var(--color-miss);
+  background: var(--color-miss);
+}
+
 .result {
   margin-top: 22px;
   padding-top: 22px;

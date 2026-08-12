@@ -5,7 +5,13 @@ import { AppShell } from "@/components/AppShell";
 import { DrillPractice } from "@/components/DrillPractice";
 import { FavouriteButton } from "@/components/FavouriteButton";
 import { createClient } from "@/lib/supabase/server";
-import { LEVEL_LABEL, tagsOf, type DrillCard, type PracticeSession } from "@/lib/types";
+import {
+  describePerformance,
+  LEVEL_LABEL,
+  tagsOf,
+  type DrillCard,
+  type PracticeSession,
+} from "@/lib/types";
 import shell from "@/components/shell.module.css";
 import styles from "@/components/drill.module.css";
 import browse from "@/components/browse.module.css";
@@ -145,8 +151,7 @@ export default async function DrillPage({
                   {formatDateTime(session.performed_at)}
                 </span>
                 <span className={styles.historyDetail}>
-                  {session.performance?.successful_shots ?? "—"}/
-                  {session.performance?.total_shots ?? "—"} ·{" "}
+                  {describePerformance(session)} ·{" "}
                   {formatDuration(session.practice_duration_seconds)}
                 </span>
                 <span className={styles.historyResult}>

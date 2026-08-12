@@ -101,19 +101,34 @@ total time actually spent practising, excluding breaks and paused time.
 
 ### Performance sheets
 
+Sheets are **tapped, not typed** — the phone sits beside the table and the
+player hits one big button per shot. Both sheets have an undo, and impossible
+results cannot be entered because nothing is typed in.
+
 `drills.sheet_type` + `drills.sheet_config` let each drill carry a different
-sheet structure, so new sheet designs can be added without a schema change.
+structure, so new sheet designs need no schema change.
 
-Only one type is implemented, the confirmed shot-attempt sheet
-(`sheet_type = 'shot_attempt'`, `sheet_config = {"total_shots": 20}`):
+**`shot_attempt`** — a fixed number of single shots
+(`sheet_config = {"total_shots": 20}`). One tap of **Made** or **Missed** per
+shot; the row of pips shows the session so far.
 
 ```
-failed  = total attempted − successful
-success = (successful / total attempted) × 100
+failed  = recorded − made
+success = (made / recorded) × 100
 ```
 
-The UI refuses impossible entries (successful > total, negatives,
-non-integers) — the save button stays disabled and no result is calculated.
+**`progressive`** — many balls per attempt, no fixed shot count. Tap **Potted**
+for each ball; the attempt only counts when the table is cleared without a
+miss.
+
+```
+cleared % = tables cleared / attempts × 100
+```
+
+With `sheet_config = {"balls_per_rack": 3}` the attempt closes itself once the
+rack is cleared. With `{}` the player taps **Table cleared** — for drills where
+the number of balls varies. The saved record keeps each run's length, so a
+session retains its shape and not just a total.
 
 A drill whose `sheet_type` has no implementation renders a clear "not supplied
 yet" panel rather than guessing at a sheet.
