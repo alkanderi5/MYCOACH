@@ -647,7 +647,6 @@ function ProgressiveSheet({
   const attempts = runs.length;
   const clearances = runs.filter((run) => run.cleared).length;
   const bestRun = runs.reduce((best, run) => Math.max(best, run.balls), current);
-  const totalBalls = runs.reduce((sum, run) => sum + run.balls, 0) + current;
   const percentage = attempts > 0 ? (clearances / attempts) * 100 : null;
 
   /** A pot. When the rack size is known, clearing it closes the attempt. */
@@ -786,22 +785,20 @@ function ProgressiveSheet({
         )}
 
         <div className={styles.sheetRow}>
-          <span className={styles.sheetLabel}>Tables cleared</span>
+          <span className={styles.sheetLabel}>Cleared</span>
           <span className={styles.sheetValue}>
-            {clearances} of {attempts}
+            {attempts === 0
+              ? "None yet"
+              : `${clearances} of ${attempts} attempt${attempts === 1 ? "" : "s"}`}
           </span>
         </div>
         <div className={styles.sheetRow}>
           <span className={styles.sheetLabel}>Best run</span>
           <span className={styles.sheetValue}>{bestRun}</span>
         </div>
-        <div className={styles.sheetRow}>
-          <span className={styles.sheetLabel}>Balls potted</span>
-          <span className={styles.sheetValue}>{totalBalls}</span>
-        </div>
 
         <div className={styles.result}>
-          <span className={styles.resultLabel}>Cleared</span>
+          <span className={styles.resultLabel}>Success</span>
           <span
             className={`${styles.resultValue} ${
               percentage === null ? styles.resultValueEmpty : ""
