@@ -2,16 +2,34 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pause, Play, Stop } from "@phosphor-icons/react";
+import { Coffee, Pause, Play, Stop } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { Drill } from "@/lib/types";
 import { playAlertTone } from "@/lib/alert-tone";
 import styles from "./drill.module.css";
 
-type Phase = "idle" | "practice" | "break" | "paused";
+/** The clock never moves the player on by itself. When a period runs out it
+ *  stops and waits on a decision — 'practiceEnded' offers the break, and
+ *  'breakEnded' offers the next practice period. */
+type Phase =
+  | "idle"
+  | "practice"
+  | "break"
+  | "paused"
+  | "practiceEnded"
+  | "breakEnded";
 
 const DEFAULT_PRACTICE_MINUTES = 20;
 const DEFAULT_BREAK_MINUTES = 5;
+
+const PHASE_LABEL: Record<Phase, string> = {
+  idle: "Ready",
+  practice: "Practice",
+  break: "Break",
+  paused: "Paused",
+  practiceEnded: "Time for a break",
+  breakEnded: "Break over",
+};
 
 export function DrillPractice({ drill }: { drill: Drill }) {
   const router = useRouter();
@@ -71,37 +89,44 @@ export function DrillPractice({ drill }: { drill: Drill }) {
 
       if (left > 0) return;
 
+      phaseEndsAt.current = null;
+
       if (phase === "practice") {
         settleElapsed("practice");
         playAlertTone("practice-end");
-        if (parsedBreak > 0) {
-          setAlert("Practice time is over. Your break has started.");
-          beginPhase("break", parsedBreak);
-        } else {
-          setAlert("Practice time is over. Record your result below.");
-          phaseEndsAt.current = null;
-          setPhase("idle");
-          settleTotals();
-        }
+        setAlert("Practice time is over — take a break.");
+        setPhase("practiceEnded");
       } else {
         settleElapsed("break");
         playAlertTone("break-end");
         setAlert("Break is over — return to training.");
-        phaseEndsAt.current = null;
-        setPhase("idle");
-        settleTotals();
+        setPhase("breakEnded");
       }
+      settleTotals();
     };
 
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
-  }, [phase, parsedBreak, beginPhase, settleElapsed, settleTotals]);
+  }, [phase, settleElapsed, settleTotals]);
 
   function handleStart() {
     setAlert("");
     practiceElapsed.current = 0;
     breakElapsed.current = 0;
     settleTotals();
+    beginPhase("practice", parsedPractice);
+  }
+
+  /** Take the offered break. */
+  function handleTakeBreak() {
+    setAlert("");
+    beginPhase("break", parsedBreak);
+  }
+
+  /** Decline the break and run another period of the same practice length.
+   *  The time already practised keeps accumulating into the session. */
+  function handleKeepPractising() {
+    setAlert("");
     beginPhase("practice", parsedPractice);
   }
 
@@ -120,6 +145,8 @@ export function DrillPractice({ drill }: { drill: Drill }) {
     setPhase(pausedPhase.current);
   }
 
+  /** End the session. Nothing reaches history until the sheet is saved, so
+   *  this points the player at the sheet rather than saving a blank result. */
   function handleStop() {
     if (phase === "practice" || phase === "break") settleElapsed(phase);
     phaseEndsAt.current = null;
@@ -129,12 +156,13 @@ export function DrillPractice({ drill }: { drill: Drill }) {
     settleTotals();
     setAlert(
       practiceElapsed.current > 0
-        ? "Session stopped. Record your result below and save."
+        ? "Session stopped. Record your result below and save it to your history."
         : "",
     );
   }
 
   const running = phase === "practice" || phase === "break";
+  const awaitingChoice = phase === "practiceEnded" || phase === "breakEnded";
 
   return (
     <>
@@ -154,7 +182,7 @@ export function DrillPractice({ drill }: { drill: Drill }) {
                 inputMode="numeric"
                 value={practiceMinutes}
                 onChange={(e) => setPracticeMinutes(e.target.value)}
-                disabled={running || phase === "paused"}
+                disabled={phase !== "idle"}
               />
               <span className={styles.durationUnit}>minutes</span>
             </label>
@@ -169,27 +197,25 @@ export function DrillPractice({ drill }: { drill: Drill }) {
                 inputMode="numeric"
                 value={breakMinutes}
                 onChange={(e) => setBreakMinutes(e.target.value)}
-                disabled={running || phase === "paused"}
+                disabled={phase !== "idle"}
               />
               <span className={styles.durationUnit}>minutes</span>
             </label>
           </div>
 
-          <p className={styles.phaseLabel}>
-            {phase === "practice"
-              ? "Practice"
-              : phase === "break"
-                ? "Break"
-                : phase === "paused"
-                  ? "Paused"
-                  : "Ready"}
-          </p>
+          <p className={styles.phaseLabel}>{PHASE_LABEL[phase]}</p>
           <p
             className={`${styles.countdown} ${!running ? styles.countdownIdle : ""}`}
             role="timer"
             aria-live="off"
           >
-            {formatClock(running || phase === "paused" ? remaining : parsedPractice * 60)}
+            {formatClock(
+              running || phase === "paused"
+                ? remaining
+                : awaitingChoice
+                  ? 0
+                  : parsedPractice * 60,
+            )}
           </p>
 
           {savedPracticeSeconds > 0 && !running && (
@@ -198,44 +224,83 @@ export function DrillPractice({ drill }: { drill: Drill }) {
             </p>
           )}
 
-          <div className={styles.timerControls}>
-            {phase === "idle" && (
-              <button type="button" className={styles.buttonPrimary} onClick={handleStart}>
-                <Play size={15} weight="fill" />
-                Start
-              </button>
-            )}
-            {running && (
-              <>
-                <button type="button" className={styles.buttonSecondary} onClick={handlePause}>
-                  <Pause size={15} weight="fill" />
-                  Pause
-                </button>
-                <button type="button" className={styles.buttonPrimary} onClick={handleStop}>
-                  <Stop size={15} weight="fill" />
-                  Stop
-                </button>
-              </>
-            )}
-            {phase === "paused" && (
-              <>
-                <button type="button" className={styles.buttonPrimary} onClick={handleResume}>
-                  <Play size={15} weight="fill" />
-                  Resume
-                </button>
-                <button type="button" className={styles.buttonSecondary} onClick={handleStop}>
-                  <Stop size={15} weight="fill" />
-                  Stop
-                </button>
-              </>
-            )}
-          </div>
-
+          {/* The prompt sits above the choices it belongs to. */}
           {alert && (
             <p className={styles.alert} role="status">
               <span className={styles.alertRule} aria-hidden="true" />
               {alert}
             </p>
+          )}
+
+          {awaitingChoice ? (
+            <div className={styles.timerChoices}>
+              {phase === "practiceEnded" && parsedBreak > 0 && (
+                <button type="button" className={styles.buttonPrimary} onClick={handleTakeBreak}>
+                  <Coffee size={15} weight="fill" />
+                  Take a {parsedBreak}-minute break
+                </button>
+              )}
+              {phase === "breakEnded" && (
+                <button
+                  type="button"
+                  className={styles.buttonPrimary}
+                  onClick={handleKeepPractising}
+                >
+                  <Play size={15} weight="fill" />
+                  Back to practice
+                </button>
+              )}
+
+              <div className={styles.timerControls}>
+                {phase === "practiceEnded" && (
+                  <button
+                    type="button"
+                    className={styles.buttonSecondary}
+                    onClick={handleKeepPractising}
+                  >
+                    <Play size={15} weight="fill" />
+                    Continue
+                  </button>
+                )}
+                <button type="button" className={styles.buttonSecondary} onClick={handleStop}>
+                  <Stop size={15} weight="fill" />
+                  Finish
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.timerControls}>
+              {phase === "idle" && (
+                <button type="button" className={styles.buttonPrimary} onClick={handleStart}>
+                  <Play size={15} weight="fill" />
+                  Start
+                </button>
+              )}
+              {running && (
+                <>
+                  <button type="button" className={styles.buttonSecondary} onClick={handlePause}>
+                    <Pause size={15} weight="fill" />
+                    Pause
+                  </button>
+                  <button type="button" className={styles.buttonPrimary} onClick={handleStop}>
+                    <Stop size={15} weight="fill" />
+                    Stop
+                  </button>
+                </>
+              )}
+              {phase === "paused" && (
+                <>
+                  <button type="button" className={styles.buttonPrimary} onClick={handleResume}>
+                    <Play size={15} weight="fill" />
+                    Resume
+                  </button>
+                  <button type="button" className={styles.buttonSecondary} onClick={handleStop}>
+                    <Stop size={15} weight="fill" />
+                    Stop
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
       </section>

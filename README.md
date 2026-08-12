@@ -62,6 +62,21 @@ their own `profiles` row and their own `practice_sessions`. `categories` and
 `drills` are read-only reference data for any signed-in player; they are
 maintained by the project owner through the Supabase dashboard.
 
+### The practice timer
+
+The clock never moves the player on by itself. When a practice period runs out
+it **stops** and waits on a decision:
+
+- **Take a break** — runs the chosen break length. When that ends it stops
+  again and offers *Back to practice*.
+- **Continue** — runs another practice period of the same length. Time from
+  every period accumulates into one session.
+- **Finish** — ends the session and points the player at the sheet.
+
+Nothing reaches history until the sheet is filled in and saved, so a stopped
+session with no result recorded is simply discarded. The saved duration is the
+total time actually spent practising, excluding breaks and paused time.
+
 ### Performance sheets
 
 `drills.sheet_type` + `drills.sheet_config` let each drill carry a different

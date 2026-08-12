@@ -160,6 +160,19 @@
   gap: 12px;
 }
 
+/* End-of-period choices: the offered next step takes the full width, with the
+   alternatives on a row beneath it. */
+.timerChoices {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timerChoices .timerControls {
+  margin-top: 0;
+}
+
 /* — buttons — */
 
 .buttonPrimary,
