@@ -4,6 +4,7 @@ import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { AppShell } from "@/components/AppShell";
 import { DrillPractice } from "@/components/DrillPractice";
 import { FavouriteButton } from "@/components/FavouriteButton";
+import { TableDiagram } from "@/components/TableDiagram";
 import { createClient } from "@/lib/supabase/server";
 import {
   describePerformance,
@@ -100,6 +101,8 @@ export default async function DrillPage({
       <section className={styles.section}>
         <p className={styles.sectionLabel}>Table setup</p>
         <div className={styles.rule} aria-hidden="true" />
+        {/* An owner-supplied image always wins; otherwise the diagram is drawn
+            from the drill's stored ball positions. */}
         {drill.setup_image_url ? (
           <figure className={styles.setupFigure}>
             {/* Owner-supplied artwork of arbitrary dimensions — plain img keeps
@@ -111,6 +114,8 @@ export default async function DrillPage({
               alt={`Starting ball positions for ${drill.name}`}
             />
           </figure>
+        ) : drill.setup?.balls?.length ? (
+          <TableDiagram setup={drill.setup} title={drill.name} />
         ) : (
           <p className={styles.setupPlaceholder}>
             The table setup image for this drill has not been supplied yet.

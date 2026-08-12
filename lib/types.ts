@@ -53,12 +53,23 @@ export type SheetConfig = {
 /** @deprecated kept for older call sites; prefer SheetConfig. */
 export type ShotAttemptConfig = SheetConfig;
 
+/** Ball positions for the generated table diagram. Coordinates are normalised:
+ *  x runs the length of the table from the baulk end, y runs across it. */
+export type DrillSetup = {
+  table?: "pool" | "snooker";
+  balls?: { role: "cue" | "object" | "blocker"; x: number; y: number; label?: string }[];
+  /** Where the cue ball should finish. */
+  zones?: { x: number; y: number; w: number; h: number; label?: string }[];
+  aims?: { from: [number, number]; to: [number, number] }[];
+};
+
 export type Drill = {
   id: string;
   category_id: string;
   name: string;
   slug: string;
   setup_image_url: string | null;
+  setup: DrillSetup | null;
   explanation: string | null;
   skill_learned: string | null;
   improvement_target: string | null;

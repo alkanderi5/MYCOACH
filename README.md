@@ -150,9 +150,19 @@ approve it before players see it, then set `content_status = 'approved'`.
 
 Still missing entirely, and not invented anywhere:
 
-- **Setup images** for every drill — the page shows a dashed placeholder.
 - **Instructional videos** — the section is hidden until a `video_url` exists.
-- **Sheet designs** beyond the confirmed shot-attempt sheet.
+- **Sheet designs** beyond the two implemented.
+
+### Table setup diagrams
+
+Every drill carries a `setup` column holding normalised ball positions, and
+the drill page draws them as an SVG table — cushions, pockets, spots, baulk
+line, the balls, and any cue-ball target zone. It is a diagram rather than a
+photograph: the design ships no raster assets, and a drill needs exact
+positions more than it needs a picture of a table.
+
+`setup_image_url` still takes precedence, so supplying a real photograph or
+your own artwork replaces the diagram for that drill without any code change.
 
 Rows can be edited in the Supabase dashboard (`drills`, `tags`, `drill_tags`,
 `programs`, `program_items`) or via a migration.

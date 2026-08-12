@@ -74,6 +74,12 @@ One drill is **one row**. It is never copied to appear in another list.
 - `program_items` point at drill rows, so a drill used by three programs — or
   by two weeks of the same program — is still one row.
 
+`drills.setup` holds normalised ball positions that `components/TableDiagram.tsx`
+draws as an SVG table. Coordinates are 0–1: x along the length from the baulk
+end, y across. Keep the diagram on design tokens only — the cloth is a surface
+tone, not green, so it reads as part of the app. `setup_image_url` wins when
+the owner supplies real artwork.
+
 Filtering lives in `lib/drills.ts`. Column filters run in Postgres; tag filters
 are intersected in code, because a PostgREST join matches a row when *any*
 linked tag matches, not all of them. Keep that split unless the catalogue grows
