@@ -47,6 +47,7 @@ These are already filled in for the `mycoach` Supabase project.
 | `/programs` | Training programs |
 | `/programs/[program]` | A program, week by week |
 | `/progress` | Overall progress, per-drill progress, full history |
+| `/profile` | Display name, level, practice summary, sign out |
 
 ## Two ways in
 

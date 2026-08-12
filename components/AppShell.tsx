@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { SignOutButton } from "./SignOutButton";
 import styles from "./shell.module.css";
 
-type Section = "practice" | "library" | "programs" | "progress";
+type Section = "practice" | "library" | "programs" | "progress" | "profile";
 
+/** Sign-out lives on the profile screen, not in the header — it is a rare,
+ *  irreversible-feeling action and does not belong beside navigation. */
 const NAV: { href: string; label: string; section: Section }[] = [
   { href: "/practice", label: "Practice", section: "practice" },
   { href: "/library", label: "Library", section: "library" },
   { href: "/programs", label: "Programs", section: "programs" },
   { href: "/progress", label: "Progress", section: "progress" },
+  { href: "/profile", label: "Profile", section: "profile" },
 ];
 
 export function AppShell({
@@ -38,7 +40,6 @@ export function AppShell({
             </Link>
           ))}
         </nav>
-        <SignOutButton />
       </header>
       <main className={styles.content}>{children}</main>
     </div>
