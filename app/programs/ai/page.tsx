@@ -31,29 +31,28 @@ export default async function AiProgramPage() {
         Create with AI
       </h1>
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">
-        Three short questions. The drills come from your library — the AI chooses among
-        them and explains each pick, and you review the result before it is saved.
+        Three short questions, then a program built from your own drill library. Every
+        pick is explained, and you review the whole thing before it is saved.
       </p>
 
+      {!configured && (
+        <Card className="mt-6 border-dashed">
+          <p className="text-[13px] font-medium text-ink">Demo mode</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted">
+            No model is connected yet, so the program below is put together by a simple
+            rule: drills at your ability, favouring the skills you pick. It is a real
+            program from your real library and works exactly like any other — only the
+            choosing is not yet done by AI.
+          </p>
+          <p className="mt-3 text-[12px] leading-relaxed text-faint">
+            Add <code className="text-accent-ink">OPENROUTER_API_KEY</code> to{" "}
+            <code className="text-accent-ink">.env.local</code> and restart to switch it on.
+          </p>
+        </Card>
+      )}
+
       <div className="mt-8">
-        {configured ? (
-          <AiProgramBuilder defaultAbility={profile?.selected_ability ?? "beginner"} />
-        ) : (
-          <Card>
-            <p className="text-[15px] text-ink">The AI builder is not configured yet</p>
-            <p className="mt-3 text-[13px] leading-relaxed text-muted">
-              Add an <code className="text-accent-ink">OPENROUTER_API_KEY</code> to{" "}
-              <code className="text-accent-ink">.env.local</code> and restart the server.
-              Until then, the MYCOACH programs and the custom builder both work normally.
-            </p>
-            <Link
-              href="/programs/custom"
-              className="mt-5 inline-block text-[13px] text-accent-ink hover:text-accent"
-            >
-              Build one yourself instead
-            </Link>
-          </Card>
-        )}
+        <AiProgramBuilder defaultAbility={profile?.selected_ability ?? "beginner"} />
       </div>
     </AppShell>
   );

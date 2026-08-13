@@ -21,6 +21,7 @@ const DAYS = [2, 3, 4, 5];
 const MINUTES = [15, 30, 45, 60];
 
 type Proposal = {
+  source?: "ai" | "demo";
   name: string;
   objective: string;
   ability: Ability;
@@ -141,11 +142,14 @@ export function AiProgramBuilder({ defaultAbility }: { defaultAbility: Ability }
     return (
       <div className="space-y-6">
         <Card>
-          <SectionTitle>Proposed program</SectionTitle>
+          <SectionTitle>
+            {proposal.source === "demo" ? "Proposed program · demo" : "Proposed program"}
+          </SectionTitle>
           <h2 className="mt-3 text-[21px] font-medium text-ink">{proposal.name}</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-muted">{proposal.objective}</p>
           <p className="mt-4 text-[12px] text-faint">
             {proposal.drills.length} drills, all from your library
+            {proposal.source === "demo" && " · chosen by rule, not by a model"}
           </p>
         </Card>
 

@@ -129,6 +129,84 @@ export function buildPrompt(request: AiRequest, options: DrillOption[]): string 
   ].join("\n");
 }
 
+/** Which categories each focus option maps onto. */
+const FOCUS_CATEGORIES: Record<string, string[]> = {
+  "potting": ["Single Shots"],
+  "cue-ball control": ["Tip Position", "Speed"],
+  "position": ["Position"],
+  "safety": ["Safety Shots", "Snooker Shots"],
+  "long shots": ["Long Shots"],
+  "consistency under pressure": ["Single Shots", "Long Shots"],
+};
+
+const ABILITY_LEVELS: Record<Ability, [number, number]> = {
+  beginner: [1, 3],
+  intermediate: [4, 7],
+  advanced: [8, 10],
+};
+
+/**
+ * A selection made here rather than by a model.
+ *
+ * Stands in until an OpenRouter key is configured, so the whole flow — choose,
+ * review, save, practise — works today. It returns exactly the shape the model
+ * is asked for and goes through the same validation, so switching to the real
+ * thing changes where the selection comes from and nothing else.
+ *
+ * It is labelled as a demo everywhere it surfaces. Presenting a rule-based
+ * pick as AI output would be a lie the player cannot check.
+ */
+export function buildDemoSelection(
+  request: AiRequest,
+  options: DrillOption[],
+): { name: string; objective: string; drills: AiSelection[] } {
+  const [minLevel, maxLevel] = ABILITY_LEVELS[request.ability];
+  const inRange = options.filter((d) => d.level >= minLevel && d.level <= maxLevel);
+  const pool = inRange.length > 0 ? inRange : options;
+
+  const wanted = new Set(
+    request.focusSkills.flatMap((skill) => FOCUS_CATEGORIES[skill.toLowerCase()] ?? []),
+  );
+
+  // Drills in a chosen category first, then the rest, each in level order so a
+  // session builds from easier to harder.
+  const byLevel = (a: DrillOption, b: DrillOption) => a.level - b.level || a.name.localeCompare(b.name);
+  const matching = pool.filter((d) => wanted.has(d.category)).sort(byLevel);
+  const others = pool.filter((d) => !wanted.has(d.category)).sort(byLevel);
+
+  const picked: AiSelection[] = [];
+  let minutes = 0;
+
+  for (const drill of [...matching, ...others]) {
+    if (picked.length >= 8) break;
+    // Keep going past the session length only until there are enough to be a
+    // program at all.
+    if (minutes >= request.sessionMinutes && picked.length >= 4) break;
+
+    picked.push({
+      drill_id: drill.id,
+      reason: wanted.has(drill.category)
+        ? `Works on ${drill.category.toLowerCase()}, which you asked to improve`
+        : `Rounds out the session at level ${drill.level}`,
+    });
+    minutes += drill.duration_minutes;
+  }
+
+  const focusLabel = request.focusSkills.length
+    ? request.focusSkills.join(" and ").toLowerCase()
+    : "all-round play";
+
+  return {
+    name: `${capitalise(request.ability)} focus: ${focusLabel}`.slice(0, 60),
+    objective: `A ${request.sessionMinutes}-minute session, ${request.daysPerWeek} days a week, built around ${focusLabel}.`,
+    drills: picked,
+  };
+}
+
+function capitalise(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export const OPENROUTER_MODEL = "anthropic/claude-sonnet-4.5";
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 

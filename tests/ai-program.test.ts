@@ -113,3 +113,57 @@ describe("reading the model's reply", () => {
     expect(extractJson("I cannot help with that.")).toBeNull();
   });
 });
+
+describe("demo selection", () => {
+  const options = [
+    { id: "b1", name: "Short pots", category: "Single Shots", level: 1, duration_minutes: 10, short_objective: null },
+    { id: "b2", name: "Lag", category: "Speed", level: 1, duration_minutes: 10, short_objective: null },
+    { id: "b3", name: "Parking", category: "Position", level: 2, duration_minutes: 10, short_objective: null },
+    { id: "b4", name: "Stop shot", category: "Tip Position", level: 2, duration_minutes: 10, short_objective: null },
+    { id: "b5", name: "Baulk safety", category: "Safety Shots", level: 3, duration_minutes: 10, short_objective: null },
+    { id: "a1", name: "Thin cut", category: "Single Shots", level: 9, duration_minutes: 20, short_objective: null },
+    { id: "a2", name: "Diagonal", category: "Long Shots", level: 9, duration_minutes: 20, short_objective: null },
+  ];
+
+  it("only ever picks drills that exist", async () => {
+    const { buildDemoSelection } = await import("@/lib/ai-program");
+    const result = buildDemoSelection(
+      { ability: "beginner", focusSkills: ["Potting"], daysPerWeek: 3, sessionMinutes: 30 },
+      options,
+    );
+    const ids = new Set(options.map((o) => o.id));
+    for (const pick of result.drills) expect(ids.has(pick.drill_id)).toBe(true);
+  });
+
+  it("stays inside the chosen ability's levels", async () => {
+    const { buildDemoSelection } = await import("@/lib/ai-program");
+    const result = buildDemoSelection(
+      { ability: "beginner", focusSkills: [], daysPerWeek: 3, sessionMinutes: 30 },
+      options,
+    );
+    const byId = new Map(options.map((o) => [o.id, o]));
+    for (const pick of result.drills) {
+      expect(byId.get(pick.drill_id)!.level).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("puts the requested skill first", async () => {
+    const { buildDemoSelection } = await import("@/lib/ai-program");
+    const result = buildDemoSelection(
+      { ability: "beginner", focusSkills: ["Safety"], daysPerWeek: 3, sessionMinutes: 20 },
+      options,
+    );
+    expect(result.drills[0].drill_id).toBe("b5");
+    expect(result.drills[0].reason).toMatch(/safety/i);
+  });
+
+  it("produces something the validator accepts", async () => {
+    const { buildDemoSelection, validateAiProgram } = await import("@/lib/ai-program");
+    const proposal = buildDemoSelection(
+      { ability: "beginner", focusSkills: ["Potting"], daysPerWeek: 3, sessionMinutes: 40 },
+      options,
+    );
+    const checked = validateAiProgram(proposal, new Set(options.map((o) => o.id)));
+    expect(checked.ok).toBe(true);
+  });
+});

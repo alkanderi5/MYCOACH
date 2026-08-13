@@ -77,8 +77,14 @@ validates the reply against real drill ids — anything invented is dropped, and
 a reply that cannot supply enough real drills is rejected. The player reviews
 the proposal before it is saved.
 
-It needs `OPENROUTER_API_KEY` in the environment. Without it the builder shows
-a plain "not configured" state and the other two routes work normally.
+Without `OPENROUTER_API_KEY` the builder runs in **demo mode**: the selection is
+made by a rule here instead — drills at the player's ability, favouring the
+skills they picked — and goes through the same validation and the same review
+screen. The whole flow works today; adding the key changes where the selection
+comes from and nothing else.
+
+Demo mode is labelled on the page, on the proposal, and in the saved program's
+objective, so a rule-made selection is never mistaken later for a model's.
 
 ## Progression
 

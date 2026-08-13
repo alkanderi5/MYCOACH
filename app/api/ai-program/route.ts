@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
+  buildDemoSelection,
   buildPrompt,
   extractJson,
   OPENROUTER_MODEL,
   OPENROUTER_URL,
   validateAiProgram,
+  type AiRequest,
   type DrillOption,
 } from "@/lib/ai-program";
 import type { Ability } from "@/lib/types";
@@ -29,16 +31,6 @@ export async function POST(request: Request) {
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error:
-          "The AI builder is not configured. Add OPENROUTER_API_KEY to the environment to enable it.",
-        configured: false,
-      },
-      { status: 503 },
-    );
-  }
 
   let body: {
     ability?: Ability;
@@ -88,15 +80,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "The drill library is empty." }, { status: 409 });
   }
 
-  const prompt = buildPrompt(
-    {
+  const aiRequest: AiRequest = {
+    ability,
+    focusSkills: Array.isArray(body.focusSkills) ? body.focusSkills.slice(0, 6) : [],
+    daysPerWeek: clamp(body.daysPerWeek ?? 3, 1, 7),
+    sessionMinutes: clamp(body.sessionMinutes ?? 30, 10, 180),
+  };
+
+  const allowed = new Set(options.map((o) => o.id));
+  const byId = new Map(options.map((o) => [o.id, o]));
+
+  // Without a key the selection is made here instead. It goes through exactly
+  // the same validation, so wiring up the model later changes nothing else.
+  if (!apiKey) {
+    const demo = validateAiProgram(buildDemoSelection(aiRequest, options), allowed);
+    if (!demo.ok) {
+      return NextResponse.json({ error: demo.reason }, { status: 422 });
+    }
+    return NextResponse.json({
+      source: "demo",
+      name: demo.program.name,
+      // The note travels with the saved program, so a rule-made selection is
+      // never mistaken later for something a model chose.
+      objective: `${demo.program.objective} Built in demo mode: drills chosen by rule, not by a model.`,
       ability,
-      focusSkills: Array.isArray(body.focusSkills) ? body.focusSkills.slice(0, 6) : [],
-      daysPerWeek: clamp(body.daysPerWeek ?? 3, 1, 7),
-      sessionMinutes: clamp(body.sessionMinutes ?? 30, 10, 180),
-    },
-    options,
-  );
+      drills: demo.program.selections.map((s) => ({ ...s, drill: byId.get(s.drill_id) })),
+    });
+  }
+
+  const prompt = buildPrompt(aiRequest, options);
 
   let content = "";
   try {
@@ -132,7 +144,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const allowed = new Set(options.map((o) => o.id));
   const result = validateAiProgram(extractJson(content), allowed);
 
   if (!result.ok) {
@@ -140,8 +151,8 @@ export async function POST(request: Request) {
   }
 
   // Return the proposal with drill detail attached, for review before saving.
-  const byId = new Map(options.map((o) => [o.id, o]));
   return NextResponse.json({
+    source: "ai",
     name: result.program.name,
     objective: result.program.objective,
     ability,
