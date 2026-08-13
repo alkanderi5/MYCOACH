@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Lock } from "@phosphor-icons/react/dist/ssr";
 import { AppShell } from "@/components/AppShell";
-import { Badge, Card, EmptyState, ProgressBar } from "@/components/ui";
+import { Badge, EmptyState, ProgressBar } from "@/components/ui";
+import { CategoryCard } from "@/components/CategoryCard";
 import { createClient } from "@/lib/supabase/server";
 import { groupNameFor, loadProgram } from "@/lib/program";
 
@@ -35,7 +36,9 @@ export default async function LevelPage({
       const done = inCategory.filter(
         (d) => program.progress.get(d.id)?.status === "passed",
       ).length;
-      return { category, total: inCategory.length, done };
+      // Preview with a drill that actually has a diagram.
+      const sample = inCategory.find((d) => d.setup?.balls?.length) ?? inCategory[0];
+      return { category, total: inCategory.length, done, sample };
     });
 
   return (
@@ -95,40 +98,19 @@ export default async function LevelPage({
         {categories.length === 0 ? (
           <p className="mt-4 text-[13px] text-muted">No drills have been added yet.</p>
         ) : (
-          <ul className="mt-4 space-y-3">
-            {categories.map(({ category, total, done }) => {
-              const body = (
-                <>
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h3 className="text-[16px] font-medium text-ink">{category.name}</h3>
-                    <span className="shrink-0 text-[12px] text-faint">
-                      {done} of {total} passed
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <ProgressBar
-                      value={total ? (done / total) * 100 : 0}
-                      label={`${category.name} progress`}
-                    />
-                  </div>
-                </>
-              );
-
-              return (
-                <li key={category.id}>
-                  {locked ? (
-                    <Card className="opacity-60">{body}</Card>
-                  ) : (
-                    <Link
-                      href={`/program/${level.level_number}/${category.slug}`}
-                      className="block rounded-[14px] border border-line bg-surface p-5 transition-colors hover:border-accent"
-                    >
-                      {body}
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+            {categories.map(({ category, total, done, sample }) => (
+              <li key={category.id}>
+                <CategoryCard
+                  category={category}
+                  href={`/program/${level.level_number}/${category.slug}`}
+                  done={done}
+                  total={total}
+                  sample={sample}
+                  locked={locked}
+                />
+              </li>
+            ))}
           </ul>
         )}
       </section>

@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { DrillExperience } from "@/components/DrillExperience";
 import { TableDiagram } from "@/components/TableDiagram";
 import { Badge, Card, SectionTitle } from "@/components/ui";
+import { ResultPills } from "@/components/PracticeChart";
 import { createClient } from "@/lib/supabase/server";
 import { loadProgram } from "@/lib/program";
 import type { DrillAttempt } from "@/lib/types";
@@ -123,7 +124,10 @@ export default async function DrillPage({
 
       {history.length > 0 && (
         <section className="mt-10">
-          <SectionTitle>Recent attempts</SectionTitle>
+          <div className="flex items-center justify-between gap-4">
+            <SectionTitle>Recent attempts</SectionTitle>
+            <ResultPills results={history} />
+          </div>
           <ul className="mt-4 divide-y divide-line border-y border-line">
             {history.map((attempt) => (
               <li key={attempt.id} className="flex items-baseline justify-between gap-4 py-3">

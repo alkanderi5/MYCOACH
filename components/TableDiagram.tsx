@@ -24,7 +24,17 @@ const PAINT = {
  * A player setting up needs exact ball positions, which a diagram states and a
  * photograph only implies. An owner-supplied image always takes precedence.
  */
-export function TableDiagram({ setup, title }: { setup: DrillSetup; title: string }) {
+export function TableDiagram({
+  setup,
+  title,
+  decorative = false,
+}: {
+  setup: DrillSetup;
+  title: string;
+  /** Preview use: drop the legend and the description, since the surrounding
+   *  card already says what it is. */
+  decorative?: boolean;
+}) {
   const balls = setup.balls ?? [];
   const zones = setup.zones ?? [];
   const aims = setup.aims ?? [];
@@ -38,8 +48,8 @@ export function TableDiagram({ setup, title }: { setup: DrillSetup; title: strin
       <svg
         viewBox={`${-CUSHION} ${-CUSHION} ${W + CUSHION * 2} ${H + CUSHION * 2}`}
         className="block h-auto w-full"
-        role="img"
-        aria-label={describe(setup, title)}
+        role={decorative ? "presentation" : "img"}
+        aria-label={decorative ? undefined : describe(setup, title)}
       >
         <rect
           x={-CUSHION}
@@ -172,6 +182,7 @@ export function TableDiagram({ setup, title }: { setup: DrillSetup; title: strin
         })}
       </svg>
 
+      {decorative ? null : (
       <figcaption className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-faint">
         {balls.some((b) => b.role === "cue") && <Key paint={PAINT.cue}>Cue ball</Key>}
         {balls.some((b) => b.role === "object") && <Key paint={PAINT.object}>Object ball</Key>}
@@ -190,6 +201,7 @@ export function TableDiagram({ setup, title }: { setup: DrillSetup; title: strin
           </span>
         )}
       </figcaption>
+      )}
     </figure>
   );
 }

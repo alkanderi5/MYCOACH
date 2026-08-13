@@ -26,7 +26,14 @@ export type Category = {
   slug: string;
   description: string | null;
   sort_order: number;
+  /** Per-category colour, from the design reference. */
+  accent_color: string | null;
 };
+
+/** Falls back to the brand accent when a category has no colour set. */
+export function categoryColor(category?: { accent_color?: string | null } | null): string {
+  return category?.accent_color || "#e5123f";
+}
 
 /** The four scoring shapes a drill can use. */
 export type TemplateType = "attempts" | "sets" | "best_run" | "completion";

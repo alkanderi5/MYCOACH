@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Badge, Card, EmptyState, ProgressBar, SectionTitle } from "@/components/ui";
+import { PracticeChart, ResultPills, type DaySlice } from "@/components/PracticeChart";
 import { createClient } from "@/lib/supabase/server";
 import { groupNameFor, loadAttempts, loadProgram } from "@/lib/program";
 import { currentLevel } from "@/lib/progression/level";
@@ -23,6 +24,13 @@ export default async function ProgressPage() {
 
   const level = currentLevel(program.levels, program.statuses);
   const levelStanding = level ? program.statuses.get(level.id) : undefined;
+
+  // Practice time by day for this week and last, from saved sessions only.
+  const { data: sessionRows } = await supabase
+    .from("practice_sessions")
+    .select("performed_at, started_at, practice_duration_seconds, actual_practice_seconds");
+
+  const week = weeklyPractice(sessionRows ?? []);
 
   // Overall program progress: passed required drills across every level.
   const requiredDrills = program.drills.filter((d) => d.is_required);
@@ -67,6 +75,7 @@ export default async function ProgressPage() {
         passed,
         total: drills.length,
         trend,
+        recent: sorted.slice(0, 5),
         standing: categoryStanding(trend, trend.recentAverage),
       };
     })
@@ -75,6 +84,7 @@ export default async function ProgressPage() {
     passed: number;
     total: number;
     trend: ReturnType<typeof trendFor>;
+    recent: { passed: boolean }[];
     standing: { label: string };
   }[];
 
@@ -102,6 +112,14 @@ export default async function ProgressPage() {
       )}
 
       <section className="mt-8">
+        <PracticeChart
+          days={week.days}
+          thisWeekSeconds={week.thisWeek}
+          lastWeekSeconds={week.lastWeek}
+        />
+      </section>
+
+      <section className="mt-8">
         <SectionTitle>Whole program</SectionTitle>
         <div className="mt-4">
           <ProgressBar value={overall} label="Overall program progress" />
@@ -127,17 +145,20 @@ export default async function ProgressPage() {
                           ` · recent average ${Math.round(row.trend.recentAverage)}%`}
                       </p>
                     </div>
-                    <Badge
-                      tone={
-                        row.standing.label === "Strong"
-                          ? "good"
-                          : row.standing.label === "Weak"
-                            ? "bad"
-                            : "neutral"
-                      }
-                    >
-                      {row.standing.label}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge
+                        tone={
+                          row.standing.label === "Strong"
+                            ? "good"
+                            : row.standing.label === "Weak"
+                              ? "bad"
+                              : "neutral"
+                        }
+                      >
+                        {row.standing.label}
+                      </Badge>
+                      <ResultPills results={row.recent} />
+                    </div>
                   </div>
                   {row.trend.change !== null && (
                     <p className="mt-3 text-[12px] text-muted">
@@ -222,4 +243,49 @@ function previousScore(
     .slice(index + 1)
     .find((a) => a.normalized_score !== null && a.template_type === attempt.template_type);
   return earlier?.normalized_score ?? null;
+}
+
+/**
+ * Practice seconds per day for this week, and the total for last week.
+ *
+ * Weeks start on Monday. A session counts on the day it was performed, using
+ * the actual practised time where the timer recorded one.
+ */
+function weeklyPractice(
+  rows: {
+    performed_at: string | null;
+    started_at: string | null;
+    practice_duration_seconds: number | null;
+    actual_practice_seconds: number | null;
+  }[],
+): { days: DaySlice[]; thisWeek: number; lastWeek: number } {
+  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  const weekday = (now.getDay() + 6) % 7; // Monday = 0
+  startOfWeek.setDate(now.getDate() - weekday);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const startOfLastWeek = new Date(startOfWeek);
+  startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+
+  const days: DaySlice[] = labels.map((label) => ({ label, seconds: 0 }));
+  let lastWeek = 0;
+
+  for (const row of rows) {
+    const when = row.performed_at ?? row.started_at;
+    if (!when) continue;
+    const at = new Date(when);
+    const seconds = row.actual_practice_seconds ?? row.practice_duration_seconds ?? 0;
+    if (seconds <= 0) continue;
+
+    if (at >= startOfWeek) {
+      const index = (at.getDay() + 6) % 7;
+      days[index].seconds += seconds;
+    } else if (at >= startOfLastWeek) {
+      lastWeek += seconds;
+    }
+  }
+
+  return { days, thisWeek: days.reduce((sum, d) => sum + d.seconds, 0), lastWeek };
 }

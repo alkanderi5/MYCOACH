@@ -27,7 +27,7 @@ export async function loadProgram(supabase: SupabaseClient) {
       .order("level_number")
       .returns<Level[]>(),
     supabase.from("difficulty_groups").select("*").order("sort_order").returns<DifficultyGroup[]>(),
-    supabase.from("categories").select("id, name, slug, description, sort_order").order("sort_order").returns<Category[]>(),
+    supabase.from("categories").select("id, name, slug, description, sort_order, accent_color").order("sort_order").returns<Category[]>(),
     supabase
       .from("drills")
       .select(DRILL_COLUMNS)
