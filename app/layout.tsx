@@ -4,18 +4,18 @@ import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600"],
   variable: "--font-inter",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "MyCoach — Billiard practice",
-  description: "Track billiards practice drills, time and progress.",
+  title: "MYCOACH",
+  description: "A guided billiards practice program, level 1 to level 10.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#161826",
+  themeColor: "#0a0c12",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

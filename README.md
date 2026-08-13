@@ -1,17 +1,18 @@
-# MyCoach — Phase 1
+# MYCOACH
 
-A practice-tracking web app for billiards. Phase 1 is single-role: the **player**
-signs in, browses drills by category, runs a practice/break timer, records the
-result on the drill's performance sheet, and reviews their progress over time.
+A guided billiards practice program. A player follows ten levels, records every
+result, and unlocks the next level by passing the required drills.
 
-Built to `MyCoach_Phase_1_Claude_Build_Brief.md` (scope) and
-`design_handoff_mycoach_login/README.md` (visual system).
+The interface answers three questions and little else: what should I practise
+now, how did I perform, and am I ready for the next level.
+
+Built to `MyCoach_Complete_Claude_Build_Prompt_v2.md`.
 
 ## Stack
 
-- **Next.js 16** (App Router, TypeScript), CSS Modules
+- **Next.js 16** (App Router, TypeScript) with **Tailwind CSS v4**
 - **Supabase** — Postgres, email/password auth, row-level security
-- **Inter** via `next/font/google` (300/400/500), **Phosphor** icons
+- **Vitest** for the progression rules
 - Deployment target: Vercel
 
 ## Running locally
@@ -24,157 +25,88 @@ npm install
 npm run dev
 ```
 
-The app expects `.env.local`:
+`.env.local` needs:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-These are already filled in for the `mycoach` Supabase project.
+```bash
+npm test
+```
 
 ## Routes
 
 | Route | Screen |
 | --- | --- |
-| `/` | Splash — holds ≥800ms, then routes by session |
-| `/login` | Email/password sign-in |
-| `/signup` | Account creation |
-| `/practice` | Search, level, quick filters, personalized rows, categories |
-| `/practice/[category]` | Drills in that category |
-| `/practice/[category]/[drill]` | Drill info, timer, performance sheet, drill history |
-| `/library` | Every drill, with combinable filters and grouped results |
-| `/programs` | Training programs |
-| `/programs/[program]` | A program, week by week |
-| `/progress` | Overall progress, per-drill progress, full history |
-| `/profile` | Display name, level, practice summary, sign out |
+| `/` | Opening animation, then routes by session |
+| `/signin`, `/signup` | Authentication |
+| `/home` | Level, progress, recommended drill, Continue Practice |
+| `/program` | The ten levels as a path |
+| `/program/[level]` | Objective and the categories at that level |
+| `/program/[level]/[category]` | Drill cards |
+| `/drill/[id]` | Media, instructions, timer, sheet, result |
+| `/progress` | Level, overall, category standing, history |
+| `/profile` | Name, email, notifications, sign out |
 
-## Two ways in
+Navigation is four destinations. Practice history lives inside Progress rather
+than taking a slot of its own.
 
-**Training programs** tell a player what to practise and in what order.
-**The drill library** is for players who want to choose for themselves. Both
-surface the same drill rows.
+## Progression
 
-Every row on the Practice page is computed from the player's own saved
-sessions — what they practised last, what they have not tried at their level,
-where their averages are lowest. Rows with nothing in them render nothing at
-all rather than an empty shelf.
+All deterministic — no model decides what a player practises.
 
-`proxy.ts` guards every route outside `/`, `/login` and `/signup`, and bounces a
-signed-in player away from the auth screens.
+- **A drill passes** when its target is met in **two of the most recent three**
+  attempts, so one lucky result cannot carry a player forward. The rule is
+  stored per drill in `passing_rule`, so it can be tuned without a code change.
+- **Level progress** counts required drills only; optional drills never block a
+  level.
+- **The next level unlocks** when every required drill in the current one is
+  passed.
+- **Recommendation** follows a fixed priority: resume an unfinished session,
+  repeat a drill close to passing, repeat one that is declining, start the next
+  unattempted drill, then an optional drill in a weak area. The reason shown to
+  the player is the rule that actually fired.
+- **Trends** compare the three most recent attempts with the three before them,
+  and only across the same sheet template — a percentage from an attempts sheet
+  and one from a best-run sheet are not the same measurement.
+
+These live in `lib/progression/`, free of React and Supabase, so they are unit
+tested and can be swapped for something smarter later.
+
+## Scoring is not trusted from the browser
+
+`normalized_score` and `passed` are recomputed by a database trigger from the
+submitted `raw_result`, so a tampered request cannot award itself a pass. Every
+template normalises onto 0–100. A unique index on `practice_session_id` means a
+retry after a network failure cannot create a second attempt.
+
+Sheet templates: **attempts**, **sets** (aggregated across all attempts, never
+an average of averages), **best run**, and **completion**.
 
 ## Data model
 
-| Table | Purpose |
-| --- | --- |
-| `profiles` | One row per player, created automatically on signup; holds their level |
-| `categories` | The seven confirmed categories |
-| `drills` | Drill content, level, difficulty, duration, and which sheet it uses |
-| `tags` / `drill_tags` | Skill, shot type, goal, game and equipment — many per drill |
-| `practice_sessions` | One saved session: player, category, drill, date/time, duration, sheet values, calculated percentage |
-| `drill_favourites` | Saved drills, private to the player |
-| `programs` / `program_items` | Training programs; items reference shared drill rows |
-| `program_enrollments` | Which programs a player is following |
-| `coach_assignments` | Schema only — no coach role or UI is built in Phase 1 |
+`difficulty_groups`, `levels`, `categories`, `level_categories`, `drills`,
+`practice_sessions`, `drill_attempts`, `player_drill_progress`,
+`player_level_progress`, `profiles`.
 
-**One drill is one row.** A drill is never duplicated to appear in another
-category, program or search result; everything joins back to the same row.
+Curriculum tables are readable by any signed-in player. Everything carrying a
+`player_id` is restricted to `auth.uid()` by RLS.
 
-**Privacy.** RLS is on for all four tables. A player can read and write only
-their own `profiles` row and their own `practice_sessions`. `categories` and
-`drills` are read-only reference data for any signed-in player; they are
-maintained by the project owner through the Supabase dashboard.
+## Table setups
 
-### The practice timer
+Each drill stores normalised ball positions in `setup`, drawn as an SVG table:
+cushions, pockets, the baulk line and D, the balls, and any cue-ball target
+zone. A drill needs exact positions more than a photograph, and the app ships
+no raster assets. `image_url` takes precedence when real artwork is supplied.
 
-The clock never moves the player on by itself. When a practice period runs out
-it **stops** and waits on a decision:
+## Sample content
 
-- **Take a break** — runs the chosen break length. When that ends it stops
-  again and offers *Back to practice*.
-- **Continue** — runs another practice period of the same length. Time from
-  every period accumulates into one session.
-- **Finish** — ends the session and points the player at the sheet.
+The 41 drills, their wording and their diagrams are **sample data**. They exist
+so the program has something real to organise. The project owner supplies the
+final curriculum: drill names, table layouts, explanations, scoring rules,
+images and videos.
 
-Nothing reaches history until the sheet is filled in and saved, so a stopped
-session with no result recorded is simply discarded. The saved duration is the
-total time actually spent practising, excluding breaks and paused time.
-
-### Performance sheets
-
-Sheets are **tapped, not typed** — the phone sits beside the table and the
-player hits one big button per shot. Both sheets have an undo, and impossible
-results cannot be entered because nothing is typed in.
-
-`drills.sheet_type` + `drills.sheet_config` let each drill carry a different
-structure, so new sheet designs need no schema change.
-
-**`shot_attempt`** — a set number of single shots. One tap of **Made** or
-**Missed** per shot; the row of pips shows the session so far.
-
-The count is **a ladder, not a fixed number**:
-
-```json
-{ "total_shots": { "beginner": 10, "intermediate": 15, "advanced": 20 } }
-```
-
-The same drill asks more of a stronger player, so a level is a different target
-rather than a different drill — there is still one row per drill. It resolves
-against the signed-in player's level, falling back down the ladder if a rung is
-missing, and a plain number still works for a drill that should ask everyone
-the same. Existing drills were laddered as base / half again / double, rounded
-up to the nearest five.
-
-```
-failed  = recorded − made
-success = (made / recorded) × 100
-```
-
-**`progressive`** — many balls per attempt, no fixed shot count. Tap **Potted**
-for each ball; the attempt only counts when the table is cleared without a
-miss.
-
-```
-cleared % = tables cleared / attempts × 100
-```
-
-With `sheet_config = {"balls_per_rack": 3}` the attempt closes itself once the
-rack is cleared. With `{}` the player taps **Table cleared** — for drills where
-the number of balls varies. The saved record keeps each run's length, so a
-session retains its shape and not just a total.
-
-A drill whose `sheet_type` has no implementation renders a clear "not supplied
-yet" panel rather than guessing at a sheet.
-
-## What is deliberately absent
-
-Per the brief: no coach role, no coach dashboard or notes, no AI assistant, no
-AI feedback or reports, no non-billiards subjects, no social sign-in. Progress
-figures are computed from saved records only — nothing is generated or inferred.
-
-## Content still needed from the project owner
-
-The catalogue ships with 22 drills across the seven categories and three
-levels, plus three training programs. **All of this copy is a draft** — it
-carries `content_status = 'draft'`, and each drill page says so. It exists so
-the library, filters and programs have something real to organise. Replace or
-approve it before players see it, then set `content_status = 'approved'`.
-
-Still missing entirely, and not invented anywhere:
-
-- **Instructional videos** — the section is hidden until a `video_url` exists.
-- **Sheet designs** beyond the two implemented.
-
-### Table setup diagrams
-
-Every drill carries a `setup` column holding normalised ball positions, and
-the drill page draws them as an SVG table — cushions, pockets, spots, baulk
-line, the balls, and any cue-ball target zone. It is a diagram rather than a
-photograph: the design ships no raster assets, and a drill needs exact
-positions more than it needs a picture of a table.
-
-`setup_image_url` still takes precedence, so supplying a real photograph or
-your own artwork replaces the diagram for that drill without any code change.
-
-Rows can be edited in the Supabase dashboard (`drills`, `tags`, `drill_tags`,
-`programs`, `program_items`) or via a migration.
+Videos are the one thing absent everywhere — the section stays hidden until a
+drill has an `optional_video_url`.

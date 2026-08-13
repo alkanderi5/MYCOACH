@@ -1,136 +1,82 @@
-/* Nocturne tokens — lifted from design_handoff_mycoach_login/reference/nocturne.css.
-   These values are binding: never introduce a colour outside this list, and never
-   pure black or pure white. */
-:root {
-  --color-bg: #161826;
-  --color-surface: #232532;
-  --color-text: #e9e9ed;
+@import "tailwindcss";
+
+/*
+ * MYCOACH design tokens.
+ *
+ * Dark navy ground, white content, soft grey support, subtle borders. One
+ * accent carries primary actions and focus so they are never identified by
+ * position alone; status colours appear only where a result is being reported.
+ */
+@theme {
+  --color-canvas: #0a0c12;
+  --color-surface: #11141c;
+  --color-elevated: #171b25;
+  --color-line: #232936;
+  --color-line-strong: #333b4d;
+
+  --color-ink: #f4f6fa;
+  --color-muted: #9aa3b6;
+  --color-faint: #666f82;
+
   --color-accent: #9184d9;
-  --color-accent-2: #a7a1db;
-  --color-divider: color-mix(in srgb, #e9e9ed 16%, transparent);
+  --color-accent-ink: #d2cefd;
+  --color-accent-deep: #2b2741;
 
-  --color-neutral-100: #f3f5fe;
-  --color-neutral-200: #e4e7f5;
-  --color-neutral-300: #cfd3e5;
-  --color-neutral-400: #b2b6ca;
-  --color-neutral-500: #9397ab;
-  --color-neutral-600: #75798c;
-  --color-neutral-700: #595d6c;
-  --color-neutral-800: #3f424d;
-  --color-neutral-900: #292b31;
-
-  --color-accent-100: #f5f4ff;
-  --color-accent-200: #e7e5fe;
-  --color-accent-300: #d2cefd;
-  --color-accent-400: #b5abfc;
-  --color-accent-500: #968ae0;
-  --color-accent-600: #796cbf;
-  --color-accent-700: #5d5294;
-  --color-accent-800: #423a6a;
-  --color-accent-900: #2b2741;
-
-  /* Made / missed. Added at the project owner's request — the handoff palette
-     is otherwise mono plus the accent. Both sit at the accent's lightness so
-     they read as part of the system rather than as warning colours, and both
-     clear 3:1 on the ground for large text and borders. Never use either as
-     the only signal: the tally buttons carry an icon and a word too. */
   --color-made: #3fae77;
   --color-miss: #d9615a;
 
-  --font-heading-weight: 500;
+  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
 
-  --space-1: 2.8px;
-  --space-2: 5.6px;
-  --space-3: 8.4px;
-  --space-4: 11.2px;
-  --space-6: 16.8px;
-  --space-8: 22.4px;
-
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
-
-  --shadow-sm: 0 0 0 1px #3f424d;
-  --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 0 0 1px #9397ab, 0 16px 40px rgba(0, 0, 0, 0.65);
-
-  /* Grounds. The light pool sits behind the brand row on each screen. */
-  --ground-splash: radial-gradient(115% 60% at 50% 30%, #3f424d 0%, #161826 58%, #292b31 100%);
-  --ground-login: radial-gradient(125% 55% at 18% 6%, #3f424d 0%, #161826 50%, #292b31 100%);
-  --ground-app: radial-gradient(130% 45% at 50% 0%, #3f424d 0%, #161826 52%, #292b31 100%);
+  --radius-card: 14px;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus is never the browser default, and never removed. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  /* Inputs inherit the type stack rather than falling back to the UA font. */
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  [disabled] {
+    cursor: not-allowed;
+  }
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
-}
+@layer utilities {
+  /* Tap targets sit above the mobile bottom navigation. */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.55;
-  font-weight: 400;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Global states — system-wide, never per component. */
-:focus {
-  outline: none;
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-::selection {
-  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
-}
-
-:disabled,
-[aria-disabled="true"] {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-button {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-a {
-  color: var(--color-accent-300);
-  text-decoration: none;
-  text-underline-offset: 3px;
-}
-
-input {
-  font: inherit;
-  color: inherit;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: var(--font-heading-weight);
-  margin: 0;
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -138,6 +84,9 @@ h6 {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    /* Delays matter as much as durations: a delayed reveal would otherwise
+       leave the screen blank for its full wait. */
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }

@@ -1,276 +1,225 @@
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { Badge, Card, EmptyState, ProgressBar, SectionTitle } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { describePerformance, type PracticeSession } from "@/lib/types";
-import shell from "@/components/shell.module.css";
-import styles from "@/components/progress.module.css";
+import { groupNameFor, loadAttempts, loadProgram } from "@/lib/program";
+import { currentLevel } from "@/lib/progression/level";
+import { categoryStanding, trendFor } from "@/lib/progression/trend";
+import type { DrillAttempt } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type SessionRow = PracticeSession & {
-  drills: { name: string; slug: string } | null;
-  categories: { name: string } | null;
-};
-
 export default async function ProgressPage() {
   const supabase = await createClient();
+  const program = await loadProgram(supabase);
 
-  // RLS scopes this to the signed-in player.
-  const { data } = await supabase
-    .from("practice_sessions")
-    .select("*, drills(name, slug), categories(name)")
-    .order("performed_at", { ascending: false })
-    .returns<SessionRow[]>();
+  const attemptsByDrill = await loadAttempts(
+    supabase,
+    program.drills.map((d) => d.id),
+  );
+  const allAttempts = [...attemptsByDrill.values()]
+    .flat()
+    .sort((a, b) => +new Date(b.completed_at) - +new Date(a.completed_at));
 
-  const sessions = data ?? [];
+  const level = currentLevel(program.levels, program.statuses);
+  const levelStanding = level ? program.statuses.get(level.id) : undefined;
 
-  if (sessions.length === 0) {
+  // Overall program progress: passed required drills across every level.
+  const requiredDrills = program.drills.filter((d) => d.is_required);
+  const passedRequired = requiredDrills.filter(
+    (d) => program.progress.get(d.id)?.status === "passed",
+  ).length;
+  const overall = requiredDrills.length
+    ? (passedRequired / requiredDrills.length) * 100
+    : 0;
+
+  if (allAttempts.length === 0) {
     return (
       <AppShell active="progress">
-        <p className={shell.kicker}>Progress</p>
-        <h1 className={shell.title}>Your practice</h1>
-        <p className={styles.empty}>
-          Nothing recorded yet. Run a drill, save the result, and your progress will build here
-          from your own sessions.
-        </p>
+        <h1 className="text-[30px] font-medium tracking-tight text-ink">Progress</h1>
+        <div className="mt-8">
+          <EmptyState title="Nothing recorded yet">
+            Run a drill and save the result. Your levels, trends and history all build from
+            your own sessions.
+          </EmptyState>
+        </div>
       </AppShell>
     );
   }
 
-  // — overall figures, all derived from saved records —
-  const totalSeconds = sessions.reduce((sum, s) => sum + s.practice_duration_seconds, 0);
-  const scored = sessions.filter((s) => s.result_percentage !== null);
-  const overallAverage =
-    scored.length > 0
-      ? scored.reduce((sum, s) => sum + Number(s.result_percentage), 0) / scored.length
-      : null;
+  // Category standing, from attempts on drills in that category.
+  const categoryRows = program.categories
+    .map((category) => {
+      const drills = program.drills.filter((d) => d.category_id === category.id);
+      const attempts = drills.flatMap((d) => attemptsByDrill.get(d.id) ?? []);
+      if (attempts.length === 0) return null;
 
-  // Oldest-first for trend maths.
-  const chronological = [...scored].reverse();
-  const recentWindow = chronological.slice(-5);
-  const earlierWindow = chronological.slice(0, Math.max(0, chronological.length - 5));
-  const recentAverage = average(recentWindow.map((s) => Number(s.result_percentage)));
-  const earlierAverage = average(earlierWindow.map((s) => Number(s.result_percentage)));
-  const overallTrend =
-    recentAverage !== null && earlierAverage !== null ? recentAverage - earlierAverage : null;
-
-  // — per-drill grouping —
-  const byDrill = new Map<string, SessionRow[]>();
-  for (const session of sessions) {
-    const bucket = byDrill.get(session.drill_id);
-    if (bucket) bucket.push(session);
-    else byDrill.set(session.drill_id, [session]);
-  }
-
-  const drillSummaries = [...byDrill.entries()]
-    .map(([drillId, rows]) => {
-      const ordered = [...rows].reverse(); // oldest → newest
-      const percentages = ordered
-        .map((s) => (s.result_percentage === null ? null : Number(s.result_percentage)))
-        .filter((value): value is number => value !== null);
+      const sorted = [...attempts].sort(
+        (a, b) => +new Date(b.completed_at) - +new Date(a.completed_at),
+      );
+      const trend = trendFor(sorted);
+      const passed = drills.filter(
+        (d) => program.progress.get(d.id)?.status === "passed",
+      ).length;
 
       return {
-        drillId,
-        name: rows[0].drills?.name ?? "Drill",
-        category: rows[0].categories?.name ?? "",
-        sessionCount: rows.length,
-        totalSeconds: rows.reduce((sum, s) => sum + s.practice_duration_seconds, 0),
-        latest: percentages.at(-1) ?? null,
-        first: percentages[0] ?? null,
-        best: percentages.length > 0 ? Math.max(...percentages) : null,
-        average: average(percentages),
-        percentages,
-        lastPractised: rows[0].performed_at,
+        category,
+        passed,
+        total: drills.length,
+        trend,
+        standing: categoryStanding(trend, trend.recentAverage),
       };
     })
-    .sort((a, b) => +new Date(b.lastPractised) - +new Date(a.lastPractised));
+    .filter(Boolean) as {
+    category: { id: string; name: string };
+    passed: number;
+    total: number;
+    trend: ReturnType<typeof trendFor>;
+    standing: { label: string };
+  }[];
 
   return (
     <AppShell active="progress">
-      <p className={shell.kicker}>Progress</p>
-      <h1 className={shell.title}>Your practice</h1>
+      <h1 className="text-[30px] font-medium tracking-tight text-ink">Progress</h1>
 
-      <div className={styles.summary}>
-        <div className={styles.stat}>
-          <p className={styles.statLabel}>Sessions</p>
-          <p className={styles.statValue}>{sessions.length}</p>
-        </div>
-        <div className={styles.stat}>
-          <p className={styles.statLabel}>Practice time</p>
-          <p className={styles.statValue}>{formatDurationShort(totalSeconds)}</p>
-        </div>
-        <div className={styles.stat}>
-          <p className={styles.statLabel}>Average</p>
-          <p className={styles.statValue}>
-            {overallAverage === null ? "—" : `${formatPercent(overallAverage)}%`}
+      {level && (
+        <Card className="mt-6">
+          <div className="flex items-baseline justify-between gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-faint">
+                Level {level.level_number} · {groupNameFor(level, program.groups)}
+              </p>
+              <p className="mt-1.5 text-[17px] text-ink">{level.title}</p>
+            </div>
+            <p className="text-[22px] font-medium tabular-nums text-accent-ink">
+              {Math.round(levelStanding?.percentage ?? 0)}%
+            </p>
+          </div>
+          <div className="mt-4">
+            <ProgressBar value={levelStanding?.percentage ?? 0} label="Current level" />
+          </div>
+        </Card>
+      )}
+
+      <section className="mt-8">
+        <SectionTitle>Whole program</SectionTitle>
+        <div className="mt-4">
+          <ProgressBar value={overall} label="Overall program progress" />
+          <p className="mt-2 text-[12px] text-faint">
+            {passedRequired} of {requiredDrills.length} required drills passed
           </p>
-          <p className={styles.statNote}>across {scored.length} scored sessions</p>
-        </div>
-        <div className={styles.stat}>
-          <p className={styles.statLabel}>Recent trend</p>
-          <p className={styles.statValue}>
-            {overallTrend === null ? "—" : formatDelta(overallTrend)}
-          </p>
-          <p className={styles.statNote}>
-            {overallTrend === null
-              ? "needs more sessions"
-              : "last 5 vs. everything before"}
-          </p>
-        </div>
-      </div>
-
-      <section className={styles.section}>
-        <p className={styles.sectionLabel}>Progress by drill</p>
-        <div className={styles.rule} aria-hidden="true" />
-
-        <div className={styles.drillList}>
-          {drillSummaries.map((drill) => {
-            const change =
-              drill.latest !== null && drill.first !== null && drill.percentages.length > 1
-                ? drill.latest - drill.first
-                : null;
-
-            return (
-              <article key={drill.drillId} className={styles.drillCard}>
-                <div className={styles.drillHead}>
-                  <div>
-                    <p className={styles.drillName}>{drill.name}</p>
-                    <p className={styles.drillCategory}>{drill.category}</p>
-                  </div>
-                  <p className={styles.drillLatest}>
-                    {drill.latest === null ? "—" : `${formatPercent(drill.latest)}%`}
-                  </p>
-                </div>
-
-                {drill.percentages.length > 1 && <Sparkline values={drill.percentages} />}
-
-                <div className={styles.drillMetrics}>
-                  <span className={styles.metric}>
-                    Sessions <span className={styles.metricValue}>{drill.sessionCount}</span>
-                  </span>
-                  <span className={styles.metric}>
-                    Best{" "}
-                    <span className={styles.metricValue}>
-                      {drill.best === null ? "—" : `${formatPercent(drill.best)}%`}
-                    </span>
-                  </span>
-                  <span className={styles.metric}>
-                    Average{" "}
-                    <span className={styles.metricValue}>
-                      {drill.average === null ? "—" : `${formatPercent(drill.average)}%`}
-                    </span>
-                  </span>
-                  <span className={styles.metric}>
-                    Time{" "}
-                    <span className={styles.metricValue}>
-                      {formatDurationShort(drill.totalSeconds)}
-                    </span>
-                  </span>
-                  {change !== null && (
-                    <span
-                      className={`${styles.metric} ${
-                        change === 0 ? styles.trendFlat : styles.trendUp
-                      }`}
-                    >
-                      Since first <span className={styles.metricValue}>{formatDelta(change)}</span>
-                    </span>
-                  )}
-                </div>
-              </article>
-            );
-          })}
         </div>
       </section>
 
-      <section className={styles.section}>
-        <p className={styles.sectionLabel}>History</p>
-        <div className={styles.rule} aria-hidden="true" />
+      {categoryRows.length > 0 && (
+        <section className="mt-10">
+          <SectionTitle>By category</SectionTitle>
+          <ul className="mt-4 space-y-3">
+            {categoryRows.map((row) => (
+              <li key={row.category.id}>
+                <Card>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[16px] font-medium text-ink">{row.category.name}</p>
+                      <p className="mt-1 text-[12px] text-faint">
+                        {row.passed} of {row.total} drills passed
+                        {row.trend.recentAverage !== null &&
+                          ` · recent average ${Math.round(row.trend.recentAverage)}%`}
+                      </p>
+                    </div>
+                    <Badge
+                      tone={
+                        row.standing.label === "Strong"
+                          ? "good"
+                          : row.standing.label === "Weak"
+                            ? "bad"
+                            : "neutral"
+                      }
+                    >
+                      {row.standing.label}
+                    </Badge>
+                  </div>
+                  {row.trend.change !== null && (
+                    <p className="mt-3 text-[12px] text-muted">
+                      {row.trend.direction === "improving"
+                        ? "Improving"
+                        : row.trend.direction === "declining"
+                          ? "Declining"
+                          : "Stable"}{" "}
+                      · {row.trend.change > 0 ? "+" : ""}
+                      {row.trend.change} points against your previous attempts
+                    </p>
+                  )}
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        <div className={styles.historyList}>
-          {sessions.map((session) => (
-            <div key={session.id} className={styles.historyRow}>
-              <div className={styles.historyMain}>
-                <p className={styles.historyDrill}>{session.drills?.name ?? "Drill"}</p>
-                <p className={styles.historyMeta}>
-                  {formatDateTime(session.performed_at)} ·{" "}
-                  {formatDurationShort(session.practice_duration_seconds)}
-                  {describePerformance(session) ? ` · ${describePerformance(session)}` : ""}
-                </p>
-              </div>
-              <span className={styles.historyResult}>
-                {session.result_percentage === null
-                  ? "—"
-                  : `${formatPercent(Number(session.result_percentage))}%`}
-              </span>
-            </div>
+      <section className="mt-10">
+        <SectionTitle>Practice history</SectionTitle>
+        <ul className="mt-4 divide-y divide-line border-y border-line">
+          {allAttempts.slice(0, 30).map((attempt) => (
+            <HistoryRow
+              key={attempt.id}
+              attempt={attempt}
+              name={program.drills.find((d) => d.id === attempt.drill_id)?.name ?? "Drill"}
+              previous={previousScore(attemptsByDrill, attempt)}
+            />
           ))}
-        </div>
+        </ul>
       </section>
     </AppShell>
   );
 }
 
-/** Plain SVG polyline over the drill's saved percentages, oldest to newest. */
-function Sparkline({ values }: { values: number[] }) {
-  const width = 100;
-  const height = 30;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-
-  const points = values.map((value, index) => {
-    const x = (index / (values.length - 1)) * width;
-    // Flat series sit mid-height rather than pinned to the floor.
-    const y = max === min ? height / 2 : height - ((value - min) / span) * height;
-    return { x, y };
-  });
-
-  const last = points.at(-1)!;
+function HistoryRow({
+  attempt,
+  name,
+  previous,
+}: {
+  attempt: DrillAttempt;
+  name: string;
+  previous: number | null;
+}) {
+  const score = attempt.normalized_score;
+  const change = score !== null && previous !== null ? Math.round(score - previous) : null;
 
   return (
-    <svg
-      className={styles.spark}
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      role="img"
-      aria-label={`Results over time: ${values.map((v) => `${formatPercent(v)}%`).join(", ")}`}
-    >
-      <polyline
-        className={styles.sparkLine}
-        points={points.map((p) => `${p.x},${p.y}`).join(" ")}
-      />
-      <circle className={styles.sparkDot} cx={last.x} cy={last.y} r={2} />
-    </svg>
+    <li className="py-3.5">
+      <div className="flex items-baseline justify-between gap-4">
+        <Link href={`/drill/${attempt.drill_id}`} className="min-w-0 flex-1 hover:text-accent">
+          <span className="block truncate text-[14px] text-ink">{name}</span>
+        </Link>
+        <span className="tabular-nums text-[15px] text-accent-ink">
+          {score === null ? "—" : `${Math.round(score)}%`}
+        </span>
+      </div>
+      <p className="mt-1 text-[11px] text-faint">
+        {new Date(attempt.completed_at).toLocaleString(undefined, {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+        {change !== null && ` · ${change > 0 ? "+" : change < 0 ? "−" : "±"}${Math.abs(change)}`}
+        {attempt.passed && " · target met"}
+      </p>
+    </li>
   );
 }
 
-function average(values: number[]): number | null {
-  if (values.length === 0) return null;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function formatPercent(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function formatDelta(value: number) {
-  const rounded = Math.abs(value) < 0.05 ? 0 : value;
-  if (rounded === 0) return "±0";
-  return `${rounded > 0 ? "+" : "−"}${formatPercent(Math.abs(rounded))}`;
-}
-
-function formatDurationShort(totalSeconds: number) {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.round((totalSeconds % 3600) / 60);
-  if (hours > 0) return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
-  if (minutes > 0) return `${minutes}m`;
-  return `${totalSeconds}s`;
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+/** The score before this one on the same drill, for the change figure. */
+function previousScore(
+  byDrill: Map<string, DrillAttempt[]>,
+  attempt: DrillAttempt,
+): number | null {
+  const list = byDrill.get(attempt.drill_id) ?? [];
+  const index = list.findIndex((a) => a.id === attempt.id);
+  if (index === -1) return null;
+  const earlier = list
+    .slice(index + 1)
+    .find((a) => a.normalized_score !== null && a.template_type === attempt.template_type);
+  return earlier?.normalized_score ?? null;
 }

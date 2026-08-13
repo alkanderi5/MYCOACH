@@ -6,15 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
+    "@tailwindcss/postcss": "^4.3.3",
     "next": "16.3.0",
+    "postcss": "^8.5.26",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -22,6 +27,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
