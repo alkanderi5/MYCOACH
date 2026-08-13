@@ -13,7 +13,7 @@ const ROUTES = [
   {
     href: "/programs/mycoach",
     Icon: Path,
-    title: "Choose a MYCOACH program",
+    title: "Choose a Cuemaster program",
     body: "Ready-made paths for beginner, intermediate and advanced.",
   },
   {

@@ -27,7 +27,7 @@ export default async function OfficialProgramsPage() {
       </Link>
 
       <h1 className="mt-6 text-[28px] font-medium tracking-tight text-ink">
-        MYCOACH programs
+        Cuemaster programs
       </h1>
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">
         Complete paths put together for each ability. Pick one and it becomes your active

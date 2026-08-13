@@ -1,5 +1,5 @@
-import { OpeningAnimation } from "@/components/OpeningAnimation";
+import { Splash } from "@/components/Splash";
 
-export default function OpeningPage() {
-  return <OpeningAnimation />;
+export default function SplashPage() {
+  return <Splash />;
 }

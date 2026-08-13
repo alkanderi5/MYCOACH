@@ -15,7 +15,7 @@ const PROGRAM_COLUMNS =
   "id, owner_player_id, name, description, program_type, ability, objective, is_published, created_at";
 
 /**
- * Every program the player can see: the published MYCOACH ones and their own.
+ * Every program the player can see: the published Cuemaster ones and their own.
  * RLS does the filtering, so this cannot leak another player's program.
  */
 export async function loadPrograms(supabase: SupabaseClient) {

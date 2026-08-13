@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MYCOACH",
+  title: "Cuemaster",
   description: "A guided billiards practice program, level 1 to level 10.",
 };
 

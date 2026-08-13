@@ -43,7 +43,8 @@ const BUTTON_BASE =
   "transition-colors disabled:opacity-45 disabled:pointer-events-none";
 
 const VARIANTS = {
-  primary: "bg-accent text-canvas hover:bg-accent-ink",
+  primary:
+    "bg-accent text-on-accent shadow-crimson hover:bg-accent-hover active:bg-[#c8103a] active:shadow-crimson-active",
   outline: "border border-line-strong text-ink hover:border-accent hover:text-accent",
   quiet: "text-muted hover:text-accent",
   danger: "border border-line-strong text-miss hover:border-miss",

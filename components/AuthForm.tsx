@@ -1,36 +1,26 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeSlash } from "@phosphor-icons/react";
+import { Check, Eye, EyeSlash } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
-import { Button, ErrorNote } from "./ui";
+import { Wordmark } from "./Wordmark";
+import { cx } from "./ui";
 
-type Mode = "signin" | "signup";
+type Mode = "login" | "signup";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
 
-const COPY = {
-  signin: {
-    heading: "Welcome back",
-    sub: "Sign in to pick up your program where you left it.",
-    action: "Sign in",
-    switchText: "New to MYCOACH?",
-    switchCta: "Create an account",
-    switchHref: "/signup",
-  },
-  signup: {
-    heading: "Start at Level 1",
-    sub: "Create an account and begin the program.",
-    action: "Create account",
-    switchText: "Already have an account?",
-    switchCta: "Sign in",
-    switchHref: "/signin",
-  },
-} as const;
-
+/**
+ * Login and sign-up, direction 3A.
+ *
+ * Crimson doubles as the error colour: the palette is mono, so an invalid field
+ * takes a crimson border and a crimson message rather than introducing a red.
+ * Errors always carry text — colour alone would say nothing to a player who
+ * cannot see it.
+ */
 export function AuthForm({
   mode,
   next,
@@ -41,11 +31,13 @@ export function AuthForm({
   notice?: string;
 }) {
   const router = useRouter();
-  const copy = COPY[mode];
+  const isSignup = mode === "signup";
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [staySignedIn, setStaySignedIn] = useState(true);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -59,7 +51,7 @@ export function AuthForm({
 
   function checkPassword(value: string) {
     if (!value) return "Enter your password.";
-    if (mode === "signup" && value.length < MIN_PASSWORD) {
+    if (isSignup && value.length < MIN_PASSWORD) {
       return `Use at least ${MIN_PASSWORD} characters.`;
     }
     return "";
@@ -83,10 +75,12 @@ export function AuthForm({
     const supabase = createClient();
     const credentials = { email: email.trim(), password };
 
-    const { data, error } =
-      mode === "signup"
-        ? await supabase.auth.signUp(credentials)
-        : await supabase.auth.signInWithPassword(credentials);
+    const { data, error } = isSignup
+      ? await supabase.auth.signUp({
+          ...credentials,
+          options: { data: { display_name: name.trim() || null } },
+        })
+      : await supabase.auth.signInWithPassword(credentials);
 
     setBusy(false);
 
@@ -95,95 +89,215 @@ export function AuthForm({
       return;
     }
 
-    if (mode === "signup" && !data.session) {
-      setFormError("Check your inbox to confirm your address, then sign in.");
+    if (isSignup && !data.session) {
+      setFormError("Check your inbox to confirm your address, then log in.");
       return;
     }
 
-    // A new account picks its ability before landing on Home.
-    router.replace(
-      mode === "signup" ? "/onboarding" : next?.startsWith("/") ? next : "/home",
-    );
+    router.replace(isSignup ? "/onboarding" : next?.startsWith("/") ? next : "/home");
     router.refresh();
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 py-16">
-      <span className="text-[14px] font-medium uppercase tracking-[0.2em] text-ink">
-        MYCOACH
-      </span>
+    <main className="relative min-h-dvh overflow-hidden bg-canvas">
+      {/* Atmosphere, not decoration: one blurred radial that never scrolls. */}
+      <div
+        aria-hidden
+        className="crimson-bloom"
+        style={
+          isSignup
+            ? {
+                right: -110,
+                background: "radial-gradient(circle, rgba(229,18,63,.28), transparent 66%)",
+              }
+            : {
+                left: -90,
+                background: "radial-gradient(circle, rgba(229,18,63,.32), transparent 66%)",
+              }
+        }
+      />
 
-      <h1 className="mt-10 text-[34px] font-medium leading-tight tracking-tight text-ink">
-        {copy.heading}
-      </h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted">{copy.sub}</p>
+      <div
+        className="relative mx-auto flex min-h-dvh w-full max-w-[420px] flex-col px-[26px]"
+        style={{
+          paddingTop: "calc(92px + env(safe-area-inset-top))",
+          paddingBottom: "calc(40px + env(safe-area-inset-bottom))",
+        }}
+      >
+        <Wordmark />
 
-      {notice && (
-        <div className="mt-6">
-          <ErrorNote>{notice}</ErrorNote>
-        </div>
-      )}
+        <h1
+          className="text-[34px] font-semibold text-ink max-[379px]:text-[30px]"
+          style={{ marginTop: 40, lineHeight: 1.08, letterSpacing: "-0.035em" }}
+        >
+          {isSignup ? (
+            <>
+              Create your
+              <br />
+              account.
+            </>
+          ) : (
+            "Welcome back."
+          )}
+        </h1>
 
-      {/* method="post" so a failed bundle cannot fall back to a GET that puts
-          the password in the URL and the server log. */}
-      <form onSubmit={handleSubmit} method="post" noValidate className="mt-9">
-        <div className="space-y-6">
-          <Field
-            id="email"
-            label="Email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            error={emailError}
-            onChange={(v) => {
-              setEmail(v);
-              if (emailError) setEmailError("");
-            }}
-            onBlur={(v) => setEmailError(checkEmail(v))}
-          />
+        <p
+          className="text-[14px] text-muted"
+          style={{ marginTop: 10, lineHeight: 1.6, maxWidth: isSignup ? 250 : 260 }}
+        >
+          {isSignup
+            ? "Two minutes, then you're on the table."
+            : "Pick your drills up where you left them."}
+        </p>
 
-          <Field
-            id="password"
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            value={password}
-            error={passwordError}
-            onChange={(v) => {
-              setPassword(v);
-              if (passwordError) setPasswordError("");
-            }}
-            trailing={
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                aria-pressed={showPassword}
-                className="text-faint transition-colors hover:text-accent"
-              >
-                {showPassword ? <EyeSlash size={19} /> : <Eye size={19} />}
-              </button>
-            }
-          />
-        </div>
-
-        {formError && (
-          <div className="mt-6">
-            <ErrorNote>{formError}</ErrorNote>
-          </div>
+        {notice && (
+          <p role="status" className="mt-6 text-[13px] leading-relaxed text-accent-ink">
+            {notice}
+          </p>
         )}
 
-        <Button type="submit" size="lg" disabled={busy} className="mt-9 w-full">
-          {busy ? "Working…" : copy.action}
-        </Button>
-      </form>
+        {/* method="post" so a failed bundle cannot fall back to a GET that puts
+            the password in the URL and the server log. */}
+        <form onSubmit={handleSubmit} method="post" noValidate>
+          <div className="flex flex-col gap-3" style={{ marginTop: isSignup ? 34 : 38 }}>
+            {isSignup && (
+              <Field
+                id="name"
+                label="Name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={setName}
+              />
+            )}
 
-      <p className="mt-10 text-center text-[13px] text-muted">
-        {copy.switchText}{" "}
-        <Link href={copy.switchHref} className="text-accent-ink hover:text-accent">
-          {copy.switchCta}
-        </Link>
-      </p>
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              error={emailError}
+              onChange={(v) => {
+                setEmail(v);
+                if (emailError) setEmailError("");
+              }}
+              onBlur={(v) => setEmailError(checkEmail(v))}
+            />
+
+            <Field
+              id="password"
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              value={password}
+              error={passwordError}
+              helper={isSignup ? "8 characters minimum." : undefined}
+              tracked={!showPassword}
+              onChange={(v) => {
+                setPassword(v);
+                if (passwordError) setPasswordError("");
+              }}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="grid h-[54px] w-10 place-items-center text-faint transition-colors hover:text-accent"
+                >
+                  {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                </button>
+              }
+            />
+          </div>
+
+          {!isSignup && (
+            <div className="flex items-center justify-between" style={{ marginTop: 16 }}>
+              <label className="inline-flex cursor-pointer items-center gap-[9px]">
+                <input
+                  type="checkbox"
+                  checked={staySignedIn}
+                  onChange={(e) => setStaySignedIn(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <span
+                  aria-hidden
+                  className={cx(
+                    "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border transition-colors",
+                    "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent",
+                    staySignedIn
+                      ? "border-accent bg-accent text-on-accent"
+                      : "border-line bg-surface",
+                  )}
+                >
+                  {staySignedIn && <Check size={11} weight="bold" />}
+                </span>
+                <span className="text-[13px] text-ink-3">Stay signed in</span>
+              </label>
+
+              <Link
+                href="/login"
+                className="text-[13px] font-medium text-accent transition-colors hover:text-accent-ink"
+              >
+                Forgot?
+              </Link>
+            </div>
+          )}
+
+          {formError && (
+            <p role="alert" className="mt-5 text-[13px] text-accent">
+              {formError}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="shadow-crimson active:shadow-crimson-active flex h-14 w-full items-center justify-center gap-3 rounded-lg bg-accent text-[16px] font-semibold text-on-accent transition-colors hover:bg-accent-hover active:bg-[#c8103a] disabled:pointer-events-none disabled:opacity-45"
+            style={{ marginTop: isSignup ? 24 : 28, letterSpacing: "-0.01em" }}
+          >
+            {busy && (
+              <span
+                aria-hidden
+                className="h-[17px] w-[17px] animate-spin rounded-full border-2 border-white/35 border-t-white"
+                style={{ animationDuration: "800ms", animationTimingFunction: "linear" }}
+              />
+            )}
+            {isSignup ? "Create account" : "Log in"}
+          </button>
+
+          {isSignup && (
+            <p
+              className="text-center text-[12px] leading-relaxed text-faint"
+              style={{ marginTop: 16 }}
+            >
+              By creating an account you agree to our{" "}
+              <Link href="/signup" className="text-ink-3 transition-colors hover:text-accent">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/signup" className="text-ink-3 transition-colors hover:text-accent">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          )}
+        </form>
+
+        <p
+          className="mt-auto text-center text-[13px] text-muted"
+          style={{ paddingTop: isSignup ? 24 : 26 }}
+        >
+          {isSignup ? "Already have an account? " : "New to Cuemaster? "}
+          <Link
+            href={isSignup ? "/login" : "/signup"}
+            className="font-medium text-accent transition-colors hover:text-accent-ink"
+          >
+            {isSignup ? "Log in" : "Create an account"}
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }
@@ -192,7 +306,9 @@ function Field({
   id,
   label,
   error,
+  helper,
   value,
+  tracked,
   onChange,
   onBlur,
   trailing,
@@ -201,10 +317,13 @@ function Field({
   id: string;
   label: string;
   error?: string;
+  helper?: string;
   value: string;
+  /** Password characters get extra tracking while hidden. */
+  tracked?: boolean;
   onChange: (value: string) => void;
   onBlur?: (value: string) => void;
-  trailing?: React.ReactNode;
+  trailing?: ReactNode;
   type: string;
   autoComplete: string;
 }) {
@@ -212,11 +331,13 @@ function Field({
     <div>
       <label
         htmlFor={id}
-        className="block text-[11px] uppercase tracking-[0.22em] text-muted"
+        className="block text-[11px] font-medium uppercase text-muted"
+        style={{ letterSpacing: "0.10em", marginBottom: 8 }}
       >
         {label}
       </label>
-      <div className="relative mt-2.5">
+
+      <div className="relative">
         <input
           id={id}
           name={id}
@@ -224,19 +345,27 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           onBlur={(e) => onBlur?.(e.target.value)}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-          className={`h-11 w-full rounded-none border-0 border-b bg-transparent pr-9 text-[17px] text-ink outline-none transition-colors ${
-            error ? "border-miss" : "border-line-strong focus:border-accent"
-          }`}
+          aria-describedby={error ? `${id}-error` : helper ? `${id}-helper` : undefined}
+          className={cx(
+            "h-[54px] w-full rounded-lg border bg-surface px-4 text-[16px] text-ink outline-none transition-colors",
+            Boolean(trailing) && "pr-12",
+            error ? "border-accent" : "border-line focus:border-accent",
+          )}
+          style={tracked && value ? { letterSpacing: "0.26em" } : undefined}
           {...rest}
         />
-        {trailing && <span className="absolute bottom-2.5 right-0">{trailing}</span>}
+        {trailing && <span className="absolute right-[6px] top-0">{trailing}</span>}
       </div>
-      {error && (
-        <p id={`${id}-error`} className="mt-2 text-[12px] text-muted">
+
+      {error ? (
+        <p id={`${id}-error`} className="mt-2 text-[12px] text-accent">
           {error}
         </p>
-      )}
+      ) : helper ? (
+        <p id={`${id}-helper`} className="mt-2 text-[12px] text-faint">
+          {helper}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -250,7 +379,7 @@ function friendly(message: string) {
     return "An account with that email already exists.";
   }
   if (normalised.includes("email not confirmed")) {
-    return "Confirm your email address before signing in.";
+    return "Confirm your email address before logging in.";
   }
   if (normalised.includes("fetch") || normalised.includes("network")) {
     return "We could not reach the server. Check your connection and try again.";

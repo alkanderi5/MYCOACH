@@ -1,4 +1,4 @@
-# MYCOACH
+# Cuemaster
 
 A guided billiards practice program. A player follows ten levels, records every
 result, and unlocks the next level by passing the required drills.
@@ -44,7 +44,7 @@ npm test
 | `/signin`, `/signup` | Authentication |
 | `/home` | Level, progress, recommended drill, Continue Practice |
 | `/programs` | Three ways in, saved programs, and the level path |
-| `/programs/mycoach` | The official MYCOACH programs |
+| `/programs/mycoach` | The official Cuemaster programs |
 | `/programs/ai` | AI program builder |
 | `/programs/custom` | Custom program builder |
 | `/programs/[id]` | A saved program |
@@ -60,7 +60,7 @@ than taking a slot of its own.
 
 ## Programs
 
-Three kinds, kept distinct: **MYCOACH** programs published by the owner, an
+Three kinds, kept distinct: **Cuemaster** programs published by the owner, an
 **AI** program chosen from the library, and a **Custom** one the player builds.
 A player may save several; exactly one is active, enforced by a partial unique
 index rather than by hope.

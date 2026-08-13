@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Path, Robot, Sliders } from "@phosphor-icons/react";
 import { Button, Card, ErrorNote, cx } from "./ui";
 import { createClient } from "@/lib/supabase/client";
+import { Wordmark } from "./Wordmark";
 import { ABILITIES, type Ability } from "@/lib/types";
 
 const ABILITY_COPY: Record<Ability, { title: string; body: string }> = {
@@ -26,7 +27,7 @@ const ROUTES = [
   {
     href: "/programs?tab=mycoach",
     Icon: Path,
-    title: "A MYCOACH program",
+    title: "A Cuemaster program",
     body: "A ready-made path put together for your level. The simplest way to start.",
   },
   {
@@ -89,9 +90,7 @@ export function OnboardingFlow() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-16">
-      <span className="text-[13px] font-medium uppercase tracking-[0.2em] text-ink">
-        MYCOACH
-      </span>
+      <Wordmark />
 
       {step === "ability" ? (
         <>

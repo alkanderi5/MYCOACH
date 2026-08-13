@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Wordmark } from "./Wordmark";
 import type { ReactNode } from "react";
 import { NavLinks } from "./NavLinks";
 
@@ -22,11 +23,8 @@ export function AppShell({
     <div className="min-h-dvh bg-canvas md:flex">
       {/* desktop rail */}
       <aside className="hidden w-56 shrink-0 border-r border-line px-5 py-8 md:block">
-        <Link
-          href="/home"
-          className="text-[15px] font-medium uppercase tracking-[0.2em] text-ink"
-        >
-          MYCOACH
+        <Link href="/home" aria-label="Cuemaster home">
+          <Wordmark />
         </Link>
         <nav className="mt-10">
           <NavLinks active={active} layout="rail" />
@@ -36,11 +34,8 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* mobile header */}
         <header className="pt-safe px-5 pt-6 md:hidden">
-          <Link
-            href="/home"
-            className="text-[14px] font-medium uppercase tracking-[0.2em] text-ink"
-          >
-            MYCOACH
+          <Link href="/home" aria-label="Cuemaster home">
+            <Wordmark />
           </Link>
         </header>
 

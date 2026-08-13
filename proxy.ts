@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Reachable without a session. Everything else requires one. */
-const PUBLIC_ROUTES = ["/", "/signin", "/signup"];
+const PUBLIC_ROUTES = ["/", "/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -51,13 +51,13 @@ export async function proxy(request: NextRequest) {
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/signin";
+    url.pathname = "/login";
     url.searchParams.set("next", pathname);
     if (unverified) url.searchParams.set("reason", "unreachable");
     return NextResponse.redirect(url);
   }
 
-  if (user && (pathname === "/signin" || pathname === "/signup")) {
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/home";
     url.search = "";

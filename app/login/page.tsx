@@ -12,5 +12,5 @@ export default async function SignInPage({
       ? "We could not reach the server to check your session, so you were signed out here. Check your connection and try again."
       : undefined;
 
-  return <AuthForm mode="signin" next={next} notice={notice} />;
+  return <AuthForm mode="login" next={next} notice={notice} />;
 }

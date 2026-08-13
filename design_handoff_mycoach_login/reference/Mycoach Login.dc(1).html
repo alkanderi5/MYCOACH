@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/nocturne-63f20b33-3685-477e-847b-1946cc05ef74/styles.css">
+<script src="_ds/nocturne-63f20b33-3685-477e-847b-1946cc05ef74/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+@keyframes mc-spin { to { transform: rotate(360deg); } }
+@keyframes mc-slide { 0% { transform: translateX(-30px); } 50% { transform: translateX(30px); } 100% { transform: translateX(-30px); } }
+@keyframes mc-roll { 0% { left: 0; transform: rotate(0deg); } 100% { left: calc(100% - 20px); transform: rotate(720deg); } }
+@keyframes mc-tick { 0% { transform: translateX(-56px); } 100% { transform: translateX(208px); } }
+@keyframes mc-sweep { 0% { transform: translateX(-44px); } 100% { transform: translateX(120px); } }
+body { margin: 0; }
+a { color: var(--color-accent-300); }
+a:hover { color: var(--color-accent); }
+</style>
+</helmet>
+
+<section style="min-height:100vh;background:var(--color-bg);font-family:var(--font-body, Inter, system-ui);padding:56px 64px 80px;box-sizing:border-box">
+  <h1 style="font-family:var(--font-heading, Inter);font-size:28px;font-weight:500;color:var(--color-text);margin:0 0 6px;letter-spacing:-0.01em">Two new directions</h1>
+  <p style="margin:0 0 48px;font-size:14px;color:var(--color-neutral-400);max-width:560px;line-height:1.6">Both drop the badge-logo idea. <a href="#2a">2a</a> is a photograph you sit on top of, with a frosted sheet. <a href="#2b">2b</a> has no photo at all — a lit neutral ground, chalk-line fields, big flush-left type.</p>
+
+  <div style="display:flex;gap:72px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- 2a -->
+    <div id="2a" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span style="font-size:12px;font-weight:500;letter-spacing:0.14em;color:var(--color-accent);border:1px solid var(--color-accent);border-radius:99px;padding:3px 10px">2A</span>
+        <span style="font-size:14px;color:var(--color-neutral-300)">Frosted sheet over photography</span>
+      </div>
+      <div style="display:flex;gap:32px">
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+          <div style="position:relative;height:100%;width:100%;background:#0b0c14;overflow:hidden">
+            <div style="position:absolute;inset:0"><image-slot id="mc2a-splash" shape="rect" fit="cover" placeholder="Drop a table shot"></image-slot></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,20,0.55),rgba(11,12,20,0.2) 40%,rgba(11,12,20,0.92));pointer-events:none"></div>
+            <div style="position:absolute;left:34px;right:34px;bottom:118px;pointer-events:none">
+              <div style="font-family:var(--font-heading, Inter);font-size:56px;font-weight:300;line-height:0.98;color:var(--color-text);letter-spacing:-0.03em">My<br>coach</div>
+              <div style="margin-top:18px;font-size:12px;letter-spacing:0.32em;text-transform:uppercase;color:var(--color-accent-300)">Billiard · Practice · Progress</div>
+            </div>
+            <div style="position:absolute;left:34px;right:34px;bottom:76px;height:2px;background:var(--color-neutral-800);border-radius:2px;overflow:hidden;pointer-events:none">
+              <div style="position:absolute;top:-9px;left:0;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#54566d,#1c1d2a 46%,#08090f);box-shadow:0 3px 10px rgba(0,0,0,.7);animation:mc-roll 2.6s cubic-bezier(.55,0,.45,1) infinite">
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#eceaf4;display:flex;align-items:center;justify-content:center"><span style="font-size:7px;font-weight:600;color:#14151f;line-height:1">8</span></div>
+              </div>
+            </div>
+          </div>
+        </x-import>
+
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+          <div style="position:relative;height:100%;width:100%;background:#0b0c14;overflow:hidden">
+            <div style="position:absolute;inset:0"><image-slot id="mc2a-login" shape="rect" fit="cover" placeholder="Drop a table shot"></image-slot></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,20,0.5),rgba(11,12,20,0.1) 30%,rgba(11,12,20,0.7));pointer-events:none"></div>
+            <div style="position:absolute;left:32px;top:96px;pointer-events:none">
+              <div style="font-family:var(--font-heading, Inter);font-size:40px;font-weight:300;line-height:1;color:var(--color-text);letter-spacing:-0.03em">Welcome back</div>
+              <div style="margin-top:10px;font-size:13px;color:var(--color-neutral-300)">Sign in to keep your run going.</div>
+            </div>
+            <div style="position:absolute;left:0;right:0;bottom:0;padding:30px 26px 40px;background:rgba(22,24,38,0.72);-webkit-backdrop-filter:blur(24px) saturate(1.2);backdrop-filter:blur(24px) saturate(1.2);border-top:1px solid var(--color-neutral-800);border-radius:26px 26px 0 0;display:flex;flex-direction:column;gap:16px">
+              <input type="email" placeholder="Email" style="height:54px;border:0;border-bottom:1px solid var(--color-neutral-700);background:transparent;color:var(--color-text);font-family:var(--font-body, Inter);font-size:16px;outline:none" style-focus="border-bottom-color:var(--color-accent)">
+              <div style="position:relative;display:flex">
+                <input type="password" value="hunter2024" placeholder="Password" style="flex:1;height:54px;border:0;border-bottom:1px solid var(--color-neutral-700);background:transparent;color:var(--color-text);font-family:var(--font-body, Inter);font-size:16px;letter-spacing:.28em;outline:none;padding-right:40px" style-focus="border-bottom-color:var(--color-accent)">
+                <button type="button" aria-label="Show password" style="position:absolute;right:0;top:0;height:54px;width:36px;background:none;border:0;color:var(--color-neutral-400);cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="color:var(--color-accent)">
+                  <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31 124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57 61.26 162.88 48 128 48S61.43 61.26 36.34 86.35C17.51 105.18 9 124 8.69 124.76a8 8 0 0 0 0 6.5c.35.79 8.82 19.57 27.65 38.4C61.43 194.74 93.12 208 128 208s66.57-13.26 91.66-38.34c18.83-18.83 27.3-37.61 27.65-38.4a8 8 0 0 0 0-6.5M128 192c-30.78 0-57.67-11.19-79.93-33.25A133.5 133.5 0 0 1 25 128a133.3 133.3 0 0 1 23.07-30.75C70.33 75.19 97.22 64 128 64s57.67 11.19 79.93 33.25A133.5 133.5 0 0 1 231.05 128c-7.21 13.46-38.62 64-103.05 64m0-112a48 48 0 1 0 48 48 48.05 48.05 0 0 0-48-48m0 80a32 32 0 1 1 32-32 32 32 0 0 1-32 32"/></svg>
+                </button>
+              </div>
+              <div style="display:flex;justify-content:flex-end"><a href="#2a" style="font-size:13px;color:var(--color-neutral-300);text-decoration:none" style-hover="color:var(--color-accent)">Forgot password?</a></div>
+              <button type="button" style="height:56px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-accent);background:transparent;color:var(--color-accent);font-family:var(--font-heading, Inter);font-size:16px;font-weight:500;cursor:pointer;transition:background .16s,color .16s" style-hover="background:var(--color-accent);color:#14151f">Log in</button>
+              <div style="display:flex;align-items:center;gap:16px;margin-top:2px">
+                <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--color-neutral-700))"></div>
+                <span style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--color-neutral-400)">or</span>
+                <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--color-neutral-700),transparent)"></div>
+              </div>
+              <div style="display:flex;gap:12px;justify-content:center">
+                <button type="button" aria-label="Continue with Google" style="width:56px;height:56px;border-radius:50%;border:1px solid var(--color-neutral-700);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:var(--color-accent)">
+                  <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.4-4.5 7l7.6 5.9c4.4-4.1 6.6-10.2 6.6-17.4z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.4-5.5l-7.6-5.9c-2.1 1.4-4.8 2.3-7.8 2.3-6.3 0-11.7-3.7-13.6-9.2l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                </button>
+                <button type="button" aria-label="Continue with Facebook" style="width:56px;height:56px;border-radius:50%;border:1px solid var(--color-neutral-700);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:var(--color-accent)">
+                  <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+                </button>
+                <button type="button" aria-label="Continue with Apple" style="width:56px;height:56px;border-radius:50%;border:1px solid var(--color-neutral-700);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:var(--color-accent)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#e9e9ed"><path d="M16.36 12.78c-.02-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.07-.81-1.58.02-3.04.92-3.85 2.33-1.64 2.85-.42 7.06 1.18 9.37.78 1.13 1.71 2.4 2.94 2.35 1.18-.05 1.62-.76 3.05-.76 1.42 0 1.83.76 3.07.74 1.27-.02 2.07-1.15 2.85-2.29.9-1.31 1.27-2.58 1.29-2.65-.03-.01-2.47-.95-2.5-3.76M14.03 5.4c.65-.79 1.09-1.88.97-2.97-.94.04-2.07.62-2.74 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.11-.53 2.76-1.33"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </x-import>
+      </div>
+    </div>
+
+    <!-- 2b -->
+    <div id="2b" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span style="font-size:12px;font-weight:500;letter-spacing:0.14em;color:var(--color-accent);border:1px solid var(--color-accent);border-radius:99px;padding:3px 10px">2B</span>
+        <span style="font-size:14px;color:var(--color-neutral-300)">Chalk lines — typographic, no photo</span>
+      </div>
+      <div style="display:flex;gap:32px">
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+          <div style="position:relative;height:100%;width:100%;background:radial-gradient(115% 60% at 50% 30%,var(--color-neutral-800) 0%,var(--color-bg) 58%,var(--color-neutral-900) 100%);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div style="font-family:var(--font-heading, Inter);font-size:38px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text);padding-left:0.16em">Mycoach</div>
+              <div style="margin-top:22px;width:26px;height:1px;background:var(--color-accent)"></div>
+              <div style="margin-top:22px;font-size:11px;letter-spacing:0.26em;text-transform:uppercase;color:var(--color-neutral-400)">Billiard practice</div>
+            </div>
+          </div>
+        </x-import>
+
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+          <div style="position:relative;height:100%;width:100%;background:radial-gradient(125% 55% at 18% 6%,var(--color-neutral-800) 0%,var(--color-bg) 50%,var(--color-neutral-900) 100%);display:flex;flex-direction:column;padding:96px 34px 46px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:11px">
+              <span style="font-size:15px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text)">Mycoach</span>
+            </div>
+
+            <div style="margin-top:54px">
+              <div style="font-family:var(--font-heading, Inter);font-size:58px;font-weight:500;line-height:0.94;letter-spacing:-0.045em;color:var(--color-text)">Rack up.</div>
+              <div style="margin-top:16px;font-size:14px;line-height:1.65;color:var(--color-neutral-400);max-width:250px">Sign in and pick your drills up where you left them.</div>
+            </div>
+
+            <div style="margin-top:52px;display:flex;flex-direction:column;gap:32px">
+              <label style="display:flex;flex-direction:column;gap:12px">
+                <span style="font-size:10px;letter-spacing:0.26em;text-transform:uppercase;color:var(--color-neutral-400)">Email</span>
+                <input type="email" value="you@mycoach.app" style="height:34px;border:0;border-bottom:1px solid var(--color-neutral-700);background:transparent;color:var(--color-text);font-family:var(--font-body, Inter);font-size:17px;outline:none;padding:0" style-focus="border-bottom-color:var(--color-accent)">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:12px">
+                <span style="font-size:10px;letter-spacing:0.26em;text-transform:uppercase;color:var(--color-neutral-400)">Password</span>
+                <div style="position:relative;display:flex">
+                  <input type="password" value="brk1234" style="flex:1;height:34px;border:0;border-bottom:1px solid var(--color-neutral-700);background:transparent;color:var(--color-text);font-family:var(--font-body, Inter);font-size:17px;letter-spacing:.3em;outline:none;padding:0 36px 0 0" style-focus="border-bottom-color:var(--color-accent)">
+                  <button type="button" aria-label="Show password" style="position:absolute;right:0;bottom:5px;background:none;border:0;color:var(--color-neutral-500);cursor:pointer;padding:0;display:flex" style-hover="color:var(--color-accent)"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31 124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57 61.26 162.88 48 128 48S61.43 61.26 36.34 86.35C17.51 105.18 9 124 8.69 124.76a8 8 0 0 0 0 6.5c.35.79 8.82 19.57 27.65 38.4C61.43 194.74 93.12 208 128 208s66.57-13.26 91.66-38.34c18.83-18.83 27.3-37.61 27.65-38.4a8 8 0 0 0 0-6.5M128 192c-30.78 0-57.67-11.19-79.93-33.25A133.5 133.5 0 0 1 25 128a133.3 133.3 0 0 1 23.07-30.75C70.33 75.19 97.22 64 128 64s57.67 11.19 79.93 33.25A133.5 133.5 0 0 1 231.05 128c-7.21 13.46-38.62 64-103.05 64m0-112a48 48 0 1 0 48 48 48.05 48.05 0 0 0-48-48m0 80a32 32 0 1 1 32-32 32 32 0 0 1-32 32"/></svg></button>
+                </div>
+              </label>
+            </div>
+
+            <div style="margin-top:26px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--color-neutral-300);cursor:pointer">
+                <span style="width:16px;height:16px;border-radius:3px;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 16%, transparent);display:flex;align-items:center;justify-content:center;flex:none">
+                  <svg width="10" height="10" viewBox="0 0 256 256" fill="var(--color-accent)"><path d="M232.49 80.49l-128 128a12 12 0 0 1-17 0l-56-56a12 12 0 1 1 17-17L96 183l119.51-119.5a12 12 0 0 1 17 17"/></svg>
+                </span>
+                Stay signed in
+              </div>
+              <a href="#2b" style="font-size:13px;color:var(--color-neutral-400);text-decoration:none" style-hover="color:var(--color-accent)">Forgot?</a>
+            </div>
+
+            <button type="button" style="margin-top:38px;height:58px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-accent);background:transparent;color:var(--color-accent);font-family:var(--font-heading, Inter);font-size:15px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:background .16s,color .16s" style-hover="background:var(--color-accent);color:var(--color-bg)">
+              Break
+              <svg width="17" height="17" viewBox="0 0 256 256" fill="currentColor"><path d="m221.66 133.66-72 72a8 8 0 0 1-11.32-11.32L196.69 136H40a8 8 0 0 1 0-16h156.69l-58.35-58.34a8 8 0 0 1 11.32-11.32l72 72a8 8 0 0 1 0 11.32"/></svg>
+            </button>
+
+            <div style="margin-top:34px;display:flex;align-items:center;gap:16px">
+              <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--color-neutral-700))"></div>
+              <span style="font-size:10px;letter-spacing:0.26em;text-transform:uppercase;color:var(--color-neutral-500)">or</span>
+              <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--color-neutral-700),transparent)"></div>
+            </div>
+
+            <div style="margin-top:22px;display:flex;gap:12px">
+              <button type="button" style="flex:1;height:50px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-neutral-700);background:transparent;color:var(--color-neutral-200);font-family:var(--font-body, Inter);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:border-color .16s" style-hover="border-color:var(--color-accent)">
+                <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.4-4.5 7l7.6 5.9c4.4-4.1 6.6-10.2 6.6-17.4z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.4-5.5l-7.6-5.9c-2.1 1.4-4.8 2.3-7.8 2.3-6.3 0-11.7-3.7-13.6-9.2l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                Google
+              </button>
+              <button type="button" style="flex:1;height:50px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-neutral-700);background:transparent;color:var(--color-neutral-200);font-family:var(--font-body, Inter);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:border-color .16s" style-hover="border-color:var(--color-accent)">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M16.36 12.78c-.02-2.35 1.92-3.48 2.01-3.53-1.1-1.6-2.8-1.82-3.4-1.84-1.45-.15-2.83.85-3.56.85-.74 0-1.87-.83-3.07-.81-1.58.02-3.04.92-3.85 2.33-1.64 2.85-.42 7.06 1.18 9.37.78 1.13 1.71 2.4 2.94 2.35 1.18-.05 1.62-.76 3.05-.76 1.42 0 1.83.76 3.07.74 1.27-.02 2.07-1.15 2.85-2.29.9-1.31 1.27-2.58 1.29-2.65-.03-.01-2.47-.95-2.5-3.76M14.03 5.4c.65-.79 1.09-1.88.97-2.97-.94.04-2.07.62-2.74 1.41-.6.7-1.13 1.82-.99 2.89 1.05.08 2.11-.53 2.76-1.33"/></svg>
+                Apple
+              </button>
+            </div>
+
+            <div style="margin-top:auto;padding-top:30px;text-align:center;font-size:13px;color:var(--color-neutral-400)">New to Mycoach? <a href="#2b" style="color:var(--color-accent-300);text-decoration:none" style-hover="color:var(--color-accent)">Create an account</a></div>
+          </div>
+        </x-import>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="min-height:100vh;background:var(--color-bg);font-family:var(--font-body, Inter, system-ui);padding:56px 64px 80px;box-sizing:border-box">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <h1 style="font-family:var(--font-heading, Inter);font-size:28px;font-weight:500;color:var(--color-text);margin:0;letter-spacing:-0.01em">Mycoach — Login</h1>
+    <span style="font-size:13px;color:var(--color-neutral-400);letter-spacing:0.04em">1a</span>
+  </div>
+  <p style="margin:0 0 44px;font-size:14px;color:var(--color-neutral-400);max-width:520px;line-height:1.6">Splash / loading and sign-in. Drop your own photos onto the two image areas — the shots work best on dark or black backgrounds.</p>
+
+  <div style="display:flex;gap:56px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- SPLASH -->
+    <div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;height:100%;width:100%;background:#0b0c14;overflow:hidden">
+          <div style="position:absolute;inset:0">
+            <image-slot id="mc-splash-bg" shape="rect" fit="cover" placeholder="Drop a billiard photo (dark background)"></image-slot>
+          </div>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,20,0.72) 0%,rgba(11,12,20,0.25) 38%,rgba(11,12,20,0.88) 100%);pointer-events:none"></div>
+
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;pointer-events:none">
+            <div style="position:relative;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#4b4d63 0%,#1d1e2b 42%,#08090f 100%);box-shadow:0 24px 60px rgba(0,0,0,0.65),inset 0 -10px 24px rgba(0,0,0,0.8),0 0 0 1px rgba(145,132,217,0.35)">
+              <div style="position:absolute;top:14px;left:26px;width:44px;height:26px;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,0.55),rgba(255,255,255,0));filter:blur(4px)"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;background:#eceaf4;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -4px 10px rgba(0,0,0,0.18)">
+                <span style="font-family:var(--font-heading, Inter);font-size:46px;font-weight:600;color:#14151f;line-height:1;transform:translateY(-1px)">8</span>
+              </div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-family:var(--font-heading, Inter);font-size:38px;font-weight:500;letter-spacing:0.18em;color:var(--color-text);text-transform:uppercase">Mycoach</div>
+              <div style="margin-top:8px;font-size:12px;letter-spacing:0.34em;text-transform:uppercase;color:var(--color-accent-300)">Billiard</div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:0;right:0;bottom:56px;display:flex;flex-direction:column;align-items:center;gap:26px;pointer-events:none">
+            <div style="position:relative;width:230px;height:34px">
+              <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,rgba(233,233,237,0.55) 0 1px,transparent 1px 8px);-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)"></div>
+              <div style="position:absolute;top:50%;left:50%;margin-left:-17px;margin-top:-17px;animation:mc-slide 2.4s ease-in-out infinite">
+                <div style="position:relative;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#53556c 0%,#1d1e2b 45%,#08090f 100%);box-shadow:0 4px 12px rgba(0,0,0,0.7);animation:mc-spin 2.4s linear infinite">
+                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:17px;height:17px;border-radius:50%;background:#eceaf4;display:flex;align-items:center;justify-content:center">
+                    <span style="font-family:var(--font-heading, Inter);font-size:11px;font-weight:600;color:#14151f;line-height:1">8</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:center;font-size:14px;line-height:1.7;color:var(--color-neutral-300);max-width:250px">{{ tagline }}</div>
+          </div>
+        </div>
+      </x-import>
+      <span style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-400)">Splash / loading</span>
+    </div>
+
+    <!-- LOGIN -->
+    <div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="position:relative;height:100%;width:100%;background:#0b0c14;display:flex;flex-direction:column">
+
+          <div style="position:relative;height:420px;flex:none">
+            <div style="position:absolute;inset:0">
+              <image-slot id="mc-login-bg" shape="rect" fit="cover" placeholder="Drop a billiard photo (dark background)"></image-slot>
+            </div>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,20,0.7) 0%,rgba(11,12,20,0.15) 45%,rgba(11,12,20,0.95) 100%);pointer-events:none"></div>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none">
+              <div style="position:relative;width:112px;height:112px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#4b4d63 0%,#1d1e2b 42%,#08090f 100%);box-shadow:0 18px 44px rgba(0,0,0,0.6),inset 0 -8px 20px rgba(0,0,0,0.8),0 0 0 1px rgba(145,132,217,0.35)">
+                <div style="position:absolute;top:10px;left:20px;width:34px;height:20px;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,0.5),rgba(255,255,255,0));filter:blur(4px)"></div>
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:#eceaf4;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 8px rgba(0,0,0,0.18)">
+                  <span style="font-family:var(--font-heading, Inter);font-size:34px;font-weight:600;color:#14151f;line-height:1">8</span>
+                </div>
+              </div>
+              <div style="font-family:var(--font-heading, Inter);font-size:26px;font-weight:500;letter-spacing:0.18em;color:var(--color-text);text-transform:uppercase">Mycoach</div>
+            </div>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:26px;background-image:repeating-linear-gradient(90deg,rgba(233,233,237,0.4) 0 1px,transparent 1px 9px);-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);pointer-events:none"></div>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;gap:18px;padding:26px 24px 42px">
+            <div style="display:flex;gap:12px">
+              <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:52px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-neutral-700);background:var(--color-neutral-800);color:var(--color-text);font-family:var(--font-body, Inter);font-size:15px;cursor:pointer;transition:border-color .16s,background .16s" style-hover="border-color:var(--color-accent);background:var(--color-neutral-700)">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.4-4.5 7l7.6 5.9c4.4-4.1 6.6-10.2 6.6-17.4z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.4-5.5l-7.6-5.9c-2.1 1.4-4.8 2.3-7.8 2.3-6.3 0-11.7-3.7-13.6-9.2l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                Google
+              </button>
+              <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:10px;height:52px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-neutral-700);background:var(--color-neutral-800);color:var(--color-text);font-family:var(--font-body, Inter);font-size:15px;cursor:pointer;transition:border-color .16s,background .16s" style-hover="border-color:var(--color-accent);background:var(--color-neutral-700)">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+                Facebook
+              </button>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--color-neutral-700))"></div>
+              <span style="font-size:12px;color:var(--color-neutral-400);letter-spacing:0.06em">Or</span>
+              <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--color-neutral-700),transparent)"></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <input type="email" placeholder="Username@gmail.com" style="height:56px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-neutral-700);background:var(--color-neutral-800);color:var(--color-text);font-family:var(--font-body, Inter);font-size:15px;padding:0 18px;outline:none;text-align:center" style-focus="border-color:var(--color-accent)">
+              <div style="position:relative;display:flex">
+                <input type="password" value="password123" placeholder="Password" style="flex:1;height:56px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-neutral-700);background:var(--color-neutral-800);color:var(--color-text);font-family:var(--font-body, Inter);font-size:15px;letter-spacing:0.3em;padding:0 52px 0 18px;outline:none;text-align:center" style-focus="border-color:var(--color-accent)">
+                <button type="button" aria-label="Show password" style="position:absolute;right:8px;top:0;height:56px;width:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;cursor:pointer;color:var(--color-neutral-300)" style-hover="color:var(--color-accent)">
+                  <svg width="21" height="21" viewBox="0 0 256 256" fill="currentColor"><path d="M247.31 124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57 61.26 162.88 48 128 48S61.43 61.26 36.34 86.35C17.51 105.18 9 124 8.69 124.76a8 8 0 0 0 0 6.5c.35.79 8.82 19.57 27.65 38.4C61.43 194.74 93.12 208 128 208s66.57-13.26 91.66-38.34c18.83-18.83 27.3-37.61 27.65-38.4a8 8 0 0 0 0-6.5M128 192c-30.78 0-57.67-11.19-79.93-33.25A133.5 133.5 0 0 1 25 128a133.3 133.3 0 0 1 23.07-30.75C70.33 75.19 97.22 64 128 64s57.67 11.19 79.93 33.25A133.5 133.5 0 0 1 231.05 128c-7.21 13.46-38.62 64-103.05 64m0-112a48 48 0 1 0 48 48 48.05 48.05 0 0 0-48-48m0 80a32 32 0 1 1 32-32 32 32 0 0 1-32 32"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:6px">
+              <a href="#1a" style="font-size:13px;color:var(--color-neutral-300);text-decoration:none" style-hover="color:var(--color-accent)">Forgot your password ?</a>
+              <button type="button" style="height:52px;padding:0 40px;border-radius:var(--radius-md, 8px);border:1px solid var(--color-accent);background:transparent;color:var(--color-accent);font-family:var(--font-heading, Inter);font-size:16px;font-weight:500;letter-spacing:0.02em;cursor:pointer;box-shadow:0 0 24px rgba(145,132,217,0.18);transition:background .16s,color .16s" style-hover="background:var(--color-accent);color:#14151f">Log In</button>
+            </div>
+
+            <div style="text-align:center;font-size:13px;color:var(--color-neutral-400);margin-top:2px">
+              New here? <a href="#1a" style="color:var(--color-accent-300);text-decoration:none" style-hover="color:var(--color-accent)">Create an account</a>
+            </div>
+          </div>
+        </div>
+      </x-import>
+      <span style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-400)">Log in</span>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tagline&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Your personal billiard coach&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { tagline: this.props.tagline ?? 'Your personal billiard coach' };
+  }
+}
+</script>
+</body>
+</html>

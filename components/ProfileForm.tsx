@@ -65,7 +65,7 @@ export function ProfileForm({
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.replace("/signin");
+    router.replace("/login");
     router.refresh();
   }
 

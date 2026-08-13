@@ -1,4 +1,4 @@
-/** MYCOACH domain types. */
+/** Cuemaster domain types. */
 
 export type GroupName = "Beginner" | "Intermediate" | "Advanced";
 
@@ -151,11 +151,11 @@ export type Profile = {
 };
 
 /** The three kinds of program. Kept distinct throughout the product: an
- *  official MYCOACH programme, one the AI selected, or one the player built. */
+ *  official Cuemaster programme, one the AI selected, or one the player built. */
 export type ProgramType = "mycoach" | "ai" | "custom";
 
 export const PROGRAM_TYPE_LABEL: Record<ProgramType, string> = {
-  mycoach: "MYCOACH",
+  mycoach: "Cuemaster",
   ai: "AI",
   custom: "Custom",
 };
