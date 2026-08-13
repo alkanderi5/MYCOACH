@@ -3,33 +3,31 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Eye, EyeSlash } from "@phosphor-icons/react";
+import { Eye, EyeSlash } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
-import styles from "./auth.module.css";
+import { Button, ErrorNote } from "./ui";
 
-type Mode = "login" | "signup";
-type Status = "idle" | "submitting" | "error";
+type Mode = "signin" | "signup";
 
-/** Deliberately loose — the server is the authority on what a real address is. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 6;
+const MIN_PASSWORD = 8;
 
 const COPY = {
-  login: {
-    headline: "Rack up.",
-    subhead: "Sign in and pick your drills up where you left them.",
-    cta: "Break",
-    switchText: "New to Mycoach?",
+  signin: {
+    heading: "Welcome back",
+    sub: "Sign in to pick up your program where you left it.",
+    action: "Sign in",
+    switchText: "New to MYCOACH?",
     switchCta: "Create an account",
     switchHref: "/signup",
   },
   signup: {
-    headline: "Break in.",
-    subhead: "Create your account and start recording your practice.",
-    cta: "Start",
+    heading: "Start at Level 1",
+    sub: "Create an account and begin the program.",
+    action: "Create account",
     switchText: "Already have an account?",
     switchCta: "Sign in",
-    switchHref: "/login",
+    switchHref: "/signin",
   },
 } as const;
 
@@ -40,7 +38,6 @@ export function AuthForm({
 }: {
   mode: Mode;
   next?: string;
-  /** Set when the player was sent here by something other than signing out. */
   notice?: string;
 }) {
   const router = useRouter();
@@ -49,236 +46,211 @@ export function AuthForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [staySignedIn, setStaySignedIn] = useState(true);
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  const validateEmail = (value: string) => {
+  function checkEmail(value: string) {
     if (!value.trim()) return "Enter your email address.";
-    if (!EMAIL_PATTERN.test(value.trim())) return "That doesn't look like an email address.";
+    if (!EMAIL_PATTERN.test(value.trim())) return "That does not look like an email address.";
     return "";
-  };
+  }
 
-  const validatePassword = (value: string) => {
+  function checkPassword(value: string) {
     if (!value) return "Enter your password.";
-    if (mode === "signup" && value.length < MIN_PASSWORD_LENGTH) {
-      return `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+    if (mode === "signup" && value.length < MIN_PASSWORD) {
+      return `Use at least ${MIN_PASSWORD} characters.`;
     }
     return "";
-  };
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextEmailError = validateEmail(email);
-    const nextPasswordError = validatePassword(password);
+    const nextEmailError = checkEmail(email);
+    const nextPasswordError = checkPassword(password);
     setEmailError(nextEmailError);
     setPasswordError(nextPasswordError);
     if (nextEmailError || nextPasswordError) {
-      // Don't leave a previous attempt's auth error sitting above the CTA.
-      setStatus("idle");
-      setErrorMessage("");
+      setFormError("");
       return;
     }
 
-    setStatus("submitting");
-    setErrorMessage("");
+    setBusy(true);
+    setFormError("");
 
-    const result = await signIn({ mode, email: email.trim(), password });
+    const supabase = createClient();
+    const credentials = { email: email.trim(), password };
 
-    if (!result.ok) {
-      setStatus("error");
-      setErrorMessage(result.message);
+    const { data, error } =
+      mode === "signup"
+        ? await supabase.auth.signUp(credentials)
+        : await supabase.auth.signInWithPassword(credentials);
+
+    setBusy(false);
+
+    if (error) {
+      setFormError(friendly(error.message));
       return;
     }
 
-    if (result.needsConfirmation) {
-      setStatus("error");
-      setErrorMessage("Check your inbox to confirm your address, then sign in.");
+    if (mode === "signup" && !data.session) {
+      setFormError("Check your inbox to confirm your address, then sign in.");
       return;
     }
 
-    router.replace(next && next.startsWith("/") ? next : "/practice");
+    router.replace(next?.startsWith("/") ? next : "/home");
     router.refresh();
   }
 
-  const submitting = status === "submitting";
-
   return (
-    <main className={styles.screen}>
-      <div className={styles.container}>
-        <span className={styles.brand}>Mycoach</span>
+    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 py-16">
+      <span className="text-[14px] font-medium uppercase tracking-[0.2em] text-ink">
+        MYCOACH
+      </span>
 
-        <h1 className={styles.headline}>{copy.headline}</h1>
-        <p className={styles.subhead}>{copy.subhead}</p>
+      <h1 className="mt-10 text-[34px] font-medium leading-tight tracking-tight text-ink">
+        {copy.heading}
+      </h1>
+      <p className="mt-3 text-sm leading-relaxed text-muted">{copy.sub}</p>
 
-        {notice && (
-          <p className={styles.authError} role="status">
-            <span className={styles.authErrorRule} aria-hidden="true" />
-            {notice}
-          </p>
-        )}
+      {notice && (
+        <div className="mt-6">
+          <ErrorNote>{notice}</ErrorNote>
+        </div>
+      )}
 
-        {/* method="post" matters even though submission is handled in JS: if the
-            bundle fails to load, a native submit would otherwise be a GET, which
-            puts the password in the URL, the browser history and the server log. */}
-        <form onSubmit={handleSubmit} method="post" noValidate>
-          <div className={styles.fields}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                className={`${styles.input} ${emailError ? styles.inputInvalid : ""}`}
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (emailError) setEmailError("");
-                }}
-                onBlur={(e) => setEmailError(validateEmail(e.target.value))}
-                aria-invalid={Boolean(emailError)}
-                aria-describedby={emailError ? "email-error" : undefined}
-              />
-              {emailError && (
-                <p className={styles.fieldMessage} id="email-error">
-                  {emailError}
-                </p>
-              )}
-            </div>
+      {/* method="post" so a failed bundle cannot fall back to a GET that puts
+          the password in the URL and the server log. */}
+      <form onSubmit={handleSubmit} method="post" noValidate className="mt-9">
+        <div className="space-y-6">
+          <Field
+            id="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            error={emailError}
+            onChange={(v) => {
+              setEmail(v);
+              if (emailError) setEmailError("");
+            }}
+            onBlur={(v) => setEmailError(checkEmail(v))}
+          />
 
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                className={`${styles.input} ${styles.password} ${
-                  passwordError ? styles.inputInvalid : ""
-                }`}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (passwordError) setPasswordError("");
-                }}
-                aria-invalid={Boolean(passwordError)}
-                aria-describedby={passwordError ? "password-error" : undefined}
-              />
+          <Field
+            id="password"
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            value={password}
+            error={passwordError}
+            onChange={(v) => {
+              setPassword(v);
+              if (passwordError) setPasswordError("");
+            }}
+            trailing={
               <button
                 type="button"
-                className={styles.eye}
-                onClick={() => setShowPassword((visible) => !visible)}
+                onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
+                className="text-faint transition-colors hover:text-accent"
               >
-                {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeSlash size={19} /> : <Eye size={19} />}
               </button>
-              {passwordError && (
-                <p className={styles.fieldMessage} id="password-error">
-                  {passwordError}
-                </p>
-              )}
-            </div>
+            }
+          />
+        </div>
+
+        {formError && (
+          <div className="mt-6">
+            <ErrorNote>{formError}</ErrorNote>
           </div>
+        )}
 
-          <div className={styles.options}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                className={styles.checkboxInput}
-                checked={staySignedIn}
-                onChange={(e) => setStaySignedIn(e.target.checked)}
-              />
-              <span className={styles.checkbox} aria-hidden="true">
-                {staySignedIn && <Check size={10} weight="bold" />}
-              </span>
-              Stay signed in
-            </label>
+        <Button type="submit" size="lg" disabled={busy} className="mt-9 w-full">
+          {busy ? "Working…" : copy.action}
+        </Button>
+      </form>
 
-            {mode === "login" && (
-              <Link className={styles.forgot} href="/login">
-                Forgot?
-              </Link>
-            )}
-          </div>
-
-          {status === "error" && errorMessage && (
-            <p className={styles.authError} role="alert">
-              <span className={styles.authErrorRule} aria-hidden="true" />
-              {errorMessage}
-            </p>
-          )}
-
-          <button type="submit" className={styles.cta} disabled={submitting}>
-            {copy.cta}
-            {submitting ? (
-              <span className={styles.spinner} aria-hidden="true" />
-            ) : (
-              <ArrowRight size={17} />
-            )}
-          </button>
-        </form>
-
-        <p className={styles.switchLine}>
-          {copy.switchText}{" "}
-          <Link className={styles.switchLink} href={copy.switchHref}>
-            {copy.switchCta}
-          </Link>
-        </p>
-      </div>
+      <p className="mt-10 text-center text-[13px] text-muted">
+        {copy.switchText}{" "}
+        <Link href={copy.switchHref} className="text-accent-ink hover:text-accent">
+          {copy.switchCta}
+        </Link>
+      </p>
     </main>
   );
 }
 
-type SignInResult =
-  | { ok: true; needsConfirmation: boolean }
-  | { ok: false; message: string };
-
-/** The single auth entry point — swap the body to change provider. */
-async function signIn({
-  mode,
-  email,
-  password,
+function Field({
+  id,
+  label,
+  error,
+  value,
+  onChange,
+  onBlur,
+  trailing,
+  ...rest
 }: {
-  mode: Mode;
-  email: string;
-  password: string;
-}): Promise<SignInResult> {
-  const supabase = createClient();
-
-  if (mode === "signup") {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return { ok: false, message: friendlyError(error.message) };
-    // With email confirmation on, Supabase returns a user but no session.
-    return { ok: true, needsConfirmation: !data.session };
-  }
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { ok: false, message: friendlyError(error.message) };
-  return { ok: true, needsConfirmation: false };
+  id: string;
+  label: string;
+  error?: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: (value: string) => void;
+  trailing?: React.ReactNode;
+  type: string;
+  autoComplete: string;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-[11px] uppercase tracking-[0.22em] text-muted"
+      >
+        {label}
+      </label>
+      <div className="relative mt-2.5">
+        <input
+          id={id}
+          name={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => onBlur?.(e.target.value)}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`h-11 w-full rounded-none border-0 border-b bg-transparent pr-9 text-[17px] text-ink outline-none transition-colors ${
+            error ? "border-miss" : "border-line-strong focus:border-accent"
+          }`}
+          {...rest}
+        />
+        {trailing && <span className="absolute bottom-2.5 right-0">{trailing}</span>}
+      </div>
+      {error && (
+        <p id={`${id}-error`} className="mt-2 text-[12px] text-muted">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
-function friendlyError(message: string): string {
+function friendly(message: string) {
   const normalised = message.toLowerCase();
   if (normalised.includes("invalid login credentials")) {
-    return "That email and password don't match an account.";
+    return "That email and password do not match an account.";
   }
-  if (normalised.includes("already registered") || normalised.includes("already been registered")) {
+  if (normalised.includes("already registered")) {
     return "An account with that email already exists.";
   }
   if (normalised.includes("email not confirmed")) {
     return "Confirm your email address before signing in.";
+  }
+  if (normalised.includes("fetch") || normalised.includes("network")) {
+    return "We could not reach the server. Check your connection and try again.";
   }
   return message;
 }

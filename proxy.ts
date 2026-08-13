@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Routes a signed-out visitor may reach. Everything else requires a session. */
-const PUBLIC_ROUTES = ["/", "/login", "/signup"];
+/** Reachable without a session. Everything else requires one. */
+const PUBLIC_ROUTES = ["/", "/signin", "/signup"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -16,9 +16,7 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
@@ -32,10 +30,10 @@ export async function proxy(request: NextRequest) {
   let user = null;
   let unverified = false;
 
-  // A player carrying session cookies whose token cannot be checked is not the
-  // same as a signed-out visitor: the auth server was unreachable. Access is
-  // still denied either way — only the explanation differs, so the player is
-  // not left thinking their password is wrong.
+  // Carrying session cookies but failing to verify them is a different thing
+  // from being signed out: the auth server was unreachable. Access is denied
+  // either way, but the player is told which happened rather than being
+  // bounced back to sign-in as though their password were wrong.
   const hasSessionCookie = request.cookies
     .getAll()
     .some((cookie) => cookie.name.startsWith("sb-"));
@@ -53,16 +51,15 @@ export async function proxy(request: NextRequest) {
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/signin";
     url.searchParams.set("next", pathname);
     if (unverified) url.searchParams.set("reason", "unreachable");
     return NextResponse.redirect(url);
   }
 
-  // A signed-in player has no reason to sit on the auth screens.
-  if (user && (pathname === "/login" || pathname === "/signup")) {
+  if (user && (pathname === "/signin" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/practice";
+    url.pathname = "/home";
     url.search = "";
     return NextResponse.redirect(url);
   }
@@ -72,7 +69,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /* Everything except static assets and image files. */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

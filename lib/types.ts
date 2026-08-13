@@ -1,214 +1,148 @@
-/** Product entities, matching the Phase 1 data structure. */
+/** MYCOACH domain types. */
 
-export type Level = "beginner" | "intermediate" | "advanced";
+export type GroupName = "Beginner" | "Intermediate" | "Advanced";
 
-export const LEVELS: Level[] = ["beginner", "intermediate", "advanced"];
+export type DifficultyGroup = {
+  id: string;
+  name: GroupName;
+  min_level: number;
+  max_level: number;
+  sort_order: number;
+};
 
-export const LEVEL_LABEL: Record<Level, string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
+export type Level = {
+  id: string;
+  level_number: number;
+  title: string;
+  objective: string | null;
+  difficulty_group_id: string;
+  sort_order: number;
+  is_published: boolean;
 };
 
 export type Category = {
   id: string;
   name: string;
   slug: string;
-  position: number;
+  description: string | null;
+  sort_order: number;
 };
 
-/** Tag kinds. A drill carries many tags, which is what lets one drill row
- *  answer several different searches without being duplicated. */
-export type TagKind = "skill" | "shot_type" | "goal" | "game" | "equipment";
+/** The four scoring shapes a drill can use. */
+export type TemplateType = "attempts" | "sets" | "best_run" | "completion";
 
-export const TAG_KIND_LABEL: Record<TagKind, string> = {
-  skill: "Skill",
-  shot_type: "Shot type",
-  goal: "Goal",
-  game: "Game",
-  equipment: "Equipment",
+export type SheetConfiguration = {
+  /** attempts: how many attempts make up a session. */
+  total_attempts?: number;
+  /** sets: how many sets, and how many attempts in each. */
+  set_count?: number;
+  attempts_per_set?: number;
+  /** best_run: the run length that counts as a pass. */
+  target_run?: number;
 };
 
-export type Tag = {
-  id: string;
-  kind: TagKind;
-  name: string;
-  slug: string;
-  position: number;
+export type PassingRule = {
+  type: "min_percentage" | "target_run" | "completion";
+  value: number;
+  /** How many recent attempts are considered. */
+  of_recent: number;
+  /** How many of those must meet the target. */
+  required_passes: number;
 };
 
-/** The performance-sheet structures a drill may carry.
- *  - 'shot_attempt' — a fixed number of single shots, each made or missed.
- *  - 'progressive'  — many balls per attempt; the attempt only counts when the
- *    table is cleared without a miss, and there is no fixed shot count. */
-export type SheetType = "shot_attempt" | "progressive";
-
-/** A shot target is either one number for everybody, or a ladder keyed by
- *  level so the same drill asks more of a stronger player. */
-export type ShotTarget = number | Partial<Record<Level, number>>;
-
-export type SheetConfig = {
-  /** shot_attempt: how many shots make up one session. */
-  total_shots?: ShotTarget;
-  /** progressive: pots needed to clear the table, when it is a fixed number. */
-  balls_per_rack?: number;
-};
-
-const FALLBACK_SHOTS = 20;
-
-/**
- * How many shots this drill asks of a given player.
- *
- * A drill is one row whatever your level — only the target moves. Falls back
- * down the ladder so a missing rung never leaves the sheet without a target.
- */
-export function resolveShotTarget(
-  config: SheetConfig | null | undefined,
-  level: Level,
-): number {
-  const target = config?.total_shots;
-  if (typeof target === "number") return target;
-  if (!target) return FALLBACK_SHOTS;
-
-  const ladder: Level[] = ["beginner", "intermediate", "advanced"];
-  const fromLevel = target[level];
-  if (typeof fromLevel === "number") return fromLevel;
-
-  // Nearest rung below, then anything at all.
-  for (let i = ladder.indexOf(level) - 1; i >= 0; i--) {
-    const value = target[ladder[i]];
-    if (typeof value === "number") return value;
-  }
-  for (const rung of ladder) {
-    const value = target[rung];
-    if (typeof value === "number") return value;
-  }
-  return FALLBACK_SHOTS;
-}
-
-/** True when the drill asks different amounts of different players. */
-export function hasLevelLadder(config: SheetConfig | null | undefined): boolean {
-  const target = config?.total_shots;
-  if (!target || typeof target === "number") return false;
-  return new Set(Object.values(target).filter((v) => typeof v === "number")).size > 1;
-}
-
-/** @deprecated kept for older call sites; prefer SheetConfig. */
-export type ShotAttemptConfig = SheetConfig;
-
-/** Ball positions for the generated table diagram. Coordinates are normalised:
- *  x runs the length of the table from the baulk end, y runs across it. */
+/** Ball positions for the generated table diagram, normalised 0–1. */
 export type DrillSetup = {
   table?: "pool" | "snooker";
   balls?: { role: "cue" | "object" | "blocker"; x: number; y: number; label?: string }[];
-  /** Where the cue ball should finish. */
   zones?: { x: number; y: number; w: number; h: number; label?: string }[];
   aims?: { from: [number, number]; to: [number, number] }[];
 };
 
 export type Drill = {
   id: string;
+  level_id: string;
   category_id: string;
   name: string;
   slug: string;
-  setup_image_url: string | null;
-  setup: DrillSetup | null;
-  explanation: string | null;
-  skill_learned: string | null;
-  improvement_target: string | null;
-  instructions: string | null;
-  video_url: string | null;
-  sheet_type: SheetType;
-  sheet_config: SheetConfig;
-  position: number;
-  is_placeholder: boolean;
-  level: Level;
-  difficulty: number;
+  short_objective: string | null;
+  learning_outcome: string | null;
+  setup_instructions: string | null;
+  execution_instructions: string | null;
+  success_condition_text: string | null;
+  image_url: string | null;
+  optional_video_url: string | null;
+  sheet_template_type: TemplateType;
+  sheet_configuration: SheetConfiguration;
+  passing_rule: PassingRule;
+  is_required: boolean;
+  sort_order: number;
   duration_minutes: number;
-  /** 'draft' copy was written to get the library moving and awaits the
-   *  project owner's approval; 'approved' is their own wording. */
-  content_status: "draft" | "approved";
-  coach_recommended: boolean;
-  created_at: string;
+  setup: DrillSetup | null;
 };
 
-/** A drill joined to the pieces the browse screens need. */
-export type DrillCard = Drill & {
-  categories: { name: string; slug: string } | null;
-  drill_tags: { tags: Tag }[];
+export type DrillStatus = "not_started" | "in_progress" | "passed";
+
+export type DrillProgress = {
+  drill_id: string;
+  status: DrillStatus;
+  best_normalized_score: number | null;
+  attempt_count: number;
+  passed_at: string | null;
 };
 
-/** Values recorded on the shot-attempt sheet. */
-export type ShotAttemptPerformance = {
-  total_shots: number;
-  successful_shots: number;
-  failed_shots: number;
+export type LevelStatus = "locked" | "current" | "completed";
+
+export type LevelProgress = {
+  level_id: string;
+  progress_percentage: number;
+  status: LevelStatus;
 };
 
-/** Values recorded on the progressive sheet. `runs` holds the number of balls
- *  potted in each attempt, so a session keeps its shape and not just a total. */
-export type ProgressivePerformance = {
-  attempts: number;
-  clearances: number;
-  best_run: number;
-  total_balls: number;
-  runs: number[];
-};
-
-export type Performance = ShotAttemptPerformance | ProgressivePerformance;
+export type SessionStatus =
+  | "active"
+  | "practice_complete"
+  | "break_complete"
+  | "finished"
+  | "abandoned";
 
 export type PracticeSession = {
   id: string;
   player_id: string;
-  category_id: string;
   drill_id: string;
-  performed_at: string;
-  practice_duration_seconds: number;
-  break_duration_seconds: number;
-  sheet_type: SheetType;
-  performance: Performance;
-  result_percentage: number | null;
+  started_at: string | null;
+  intended_practice_seconds: number | null;
+  intended_break_seconds: number | null;
+  actual_practice_seconds: number | null;
+  status: SessionStatus;
 };
 
-/** One-line summary of a saved session, whichever sheet produced it. */
-export function describePerformance(session: {
-  sheet_type: SheetType;
-  performance: Performance;
-}): string {
-  const p = session.performance;
-  if (session.sheet_type === "progressive" && "attempts" in p) {
-    return `${p.clearances}/${p.attempts} cleared · best run ${p.best_run}`;
-  }
-  if ("total_shots" in p && p.total_shots) {
-    return `${p.successful_shots}/${p.total_shots}`;
-  }
-  return "";
-}
-
-export type Program = {
+export type DrillAttempt = {
   id: string;
-  name: string;
-  slug: string;
-  level: Level;
-  summary: string | null;
-  position: number;
-  content_status: "draft" | "approved";
-};
-
-export type ProgramItem = {
-  id: string;
-  program_id: string;
   drill_id: string;
-  week: number;
-  position: number;
-  focus: string | null;
+  practice_session_id: string | null;
+  template_type: TemplateType;
+  raw_result: RawResult;
+  normalized_score: number | null;
+  passed: boolean;
+  player_note: string | null;
+  completed_at: string;
 };
 
-/** Flattens the tag join into a plain list. */
-export function tagsOf(drill: Pick<DrillCard, "drill_tags">): Tag[] {
-  return (drill.drill_tags ?? []).map((link) => link.tags).filter(Boolean);
-}
+/** What each template records. The database recomputes the score from this. */
+export type RawResult =
+  | { total_attempts: number; successful_attempts: number }
+  | { sets: { total: number; successful: number }[] }
+  | { runs_attempted: number; best_run: number }
+  | { completed: boolean; attempts: number; completion_seconds?: number };
 
-export function tagsOfKind(drill: Pick<DrillCard, "drill_tags">, kind: TagKind): Tag[] {
-  return tagsOf(drill).filter((tag) => tag.kind === kind);
-}
+export type Profile = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  current_level_id: string | null;
+  notification_preference: boolean;
+  created_at: string;
+};
+
+export const GROUP_FOR_LEVEL = (levelNumber: number): GroupName =>
+  levelNumber <= 3 ? "Beginner" : levelNumber <= 7 ? "Intermediate" : "Advanced";
