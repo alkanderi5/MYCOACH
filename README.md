@@ -43,7 +43,12 @@ npm test
 | `/` | Opening animation, then routes by session |
 | `/signin`, `/signup` | Authentication |
 | `/home` | Level, progress, recommended drill, Continue Practice |
-| `/program` | The ten levels as a path |
+| `/programs` | Three ways in, saved programs, and the level path |
+| `/programs/mycoach` | The official MYCOACH programs |
+| `/programs/ai` | AI program builder |
+| `/programs/custom` | Custom program builder |
+| `/programs/[id]` | A saved program |
+| `/onboarding` | Choose ability, then how to start |
 | `/program/[level]` | Objective and the categories at that level |
 | `/program/[level]/[category]` | Drill cards |
 | `/drill/[id]` | Media, instructions, timer, sheet, result |
@@ -52,6 +57,28 @@ npm test
 
 Navigation is four destinations. Practice history lives inside Progress rather
 than taking a slot of its own.
+
+## Programs
+
+Three kinds, kept distinct: **MYCOACH** programs published by the owner, an
+**AI** program chosen from the library, and a **Custom** one the player builds.
+A player may save several; exactly one is active, enforced by a partial unique
+index rather than by hope.
+
+Switching or editing a program never touches history: sessions store
+`drill_id` directly, so reordering a program cannot rewrite what was already
+recorded.
+
+### The AI builder
+
+The model is a suggestion engine over a fixed catalogue, never a source of
+content. The server reads the drill list, prompts through OpenRouter, and
+validates the reply against real drill ids — anything invented is dropped, and
+a reply that cannot supply enough real drills is rejected. The player reviews
+the proposal before it is saved.
+
+It needs `OPENROUTER_API_KEY` in the environment. Without it the builder shows
+a plain "not configured" state and the other two routes work normally.
 
 ## Progression
 

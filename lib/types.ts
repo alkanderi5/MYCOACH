@@ -135,13 +135,58 @@ export type RawResult =
   | { runs_attempted: number; best_run: number }
   | { completed: boolean; attempts: number; completion_seconds?: number };
 
+export type Ability = "beginner" | "intermediate" | "advanced";
+
+export const ABILITIES: Ability[] = ["beginner", "intermediate", "advanced"];
+
 export type Profile = {
   id: string;
   email: string;
   display_name: string | null;
+  selected_ability: Ability | null;
+  onboarded_at: string | null;
   current_level_id: string | null;
   notification_preference: boolean;
   created_at: string;
+};
+
+/** The three kinds of program. Kept distinct throughout the product: an
+ *  official MYCOACH programme, one the AI selected, or one the player built. */
+export type ProgramType = "mycoach" | "ai" | "custom";
+
+export const PROGRAM_TYPE_LABEL: Record<ProgramType, string> = {
+  mycoach: "MYCOACH",
+  ai: "AI",
+  custom: "Custom",
+};
+
+export type TrainingProgram = {
+  id: string;
+  owner_player_id: string | null;
+  name: string;
+  description: string | null;
+  program_type: ProgramType;
+  ability: Ability;
+  objective: string | null;
+  is_published: boolean;
+  created_at: string;
+};
+
+export type ProgramDrill = {
+  id: string;
+  training_program_id: string;
+  drill_id: string;
+  sort_order: number;
+  selection_reason: string | null;
+};
+
+export type PlayerProgram = {
+  id: string;
+  player_id: string;
+  training_program_id: string;
+  is_active: boolean;
+  saved_at: string;
+  last_practiced_at: string | null;
 };
 
 export const GROUP_FOR_LEVEL = (levelNumber: number): GroupName =>

@@ -5,7 +5,7 @@ import type { Section } from "./AppShell";
 
 const ITEMS: { href: string; label: string; section: Section; Icon: typeof House }[] = [
   { href: "/home", label: "Home", section: "home", Icon: House },
-  { href: "/program", label: "Program", section: "program", Icon: Path },
+  { href: "/programs", label: "Programs", section: "program", Icon: Path },
   { href: "/progress", label: "Progress", section: "progress", Icon: ChartLine },
   { href: "/profile", label: "Profile", section: "profile", Icon: User },
 ];

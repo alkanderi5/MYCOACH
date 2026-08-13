@@ -4,6 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { Badge, ButtonLink, Card, EmptyState, ProgressBar, SectionTitle } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { groupNameFor, loadActiveSession, loadAttempts, loadProgram } from "@/lib/program";
+import { loadPrograms, orderedDrills } from "@/lib/programs";
+import { PROGRAM_TYPE_LABEL } from "@/lib/types";
 import { currentLevel } from "@/lib/progression/level";
 import { recommendNext } from "@/lib/progression/recommendation";
 
@@ -12,19 +14,28 @@ export const dynamic = "force-dynamic";
 /** Home is a decision screen: what to practise now, and one button to start. */
 export default async function HomePage() {
   const supabase = await createClient();
-  const program = await loadProgram(supabase);
+  const [program, programs] = await Promise.all([
+    loadProgram(supabase),
+    loadPrograms(supabase),
+  ]);
 
   const level = currentLevel(program.levels, program.statuses);
   const levelDrills = level ? (program.drillsByLevel.get(level.id) ?? []) : [];
   const standing = level ? program.statuses.get(level.id) : undefined;
 
+  // The active program decides what to practise next. Without one, the current
+  // level stands in, so a player who skipped the choice is never stuck.
+  const activeProgram = programs.active;
+  const programDrills = orderedDrills(activeProgram, program.drills);
+  const sourceDrills = programDrills.length > 0 ? programDrills : levelDrills;
+
   const [attemptsByDrill, activeSession] = await Promise.all([
-    loadAttempts(supabase, levelDrills.map((d) => d.id)),
+    loadAttempts(supabase, sourceDrills.map((d) => d.id)),
     loadActiveSession(supabase),
   ]);
 
   const recommendation = recommendNext({
-    drills: levelDrills,
+    drills: sourceDrills,
     progress: program.progress,
     attemptsByDrill,
     activeSession,
@@ -52,6 +63,23 @@ export default async function HomePage() {
             <Badge tone="accent">{groupNameFor(level, program.groups)}</Badge>
           </div>
           <p className="mt-1 text-sm text-muted">{level.title}</p>
+
+          {activeProgram ? (
+            <p className="mt-4 text-[12px] text-faint">
+              Following{" "}
+              <Link href="/programs" className="text-accent-ink hover:text-accent">
+                {activeProgram.name}
+              </Link>{" "}
+              · {PROGRAM_TYPE_LABEL[activeProgram.program_type]}
+            </p>
+          ) : (
+            <p className="mt-4 text-[12px] text-faint">
+              No active program ·{" "}
+              <Link href="/programs" className="text-accent-ink hover:text-accent">
+                choose one
+              </Link>
+            </p>
+          )}
 
           <div className="mt-5">
             <ProgressBar
@@ -138,8 +166,8 @@ export default async function HomePage() {
           </section>
 
           <p className="mt-10 text-center">
-            <Link href="/program" className="text-[13px] text-muted hover:text-accent">
-              Explore the full program
+            <Link href="/programs" className="text-[13px] text-muted hover:text-accent">
+              Explore programs and levels
             </Link>
           </p>
         </>

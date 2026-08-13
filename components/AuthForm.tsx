@@ -100,7 +100,10 @@ export function AuthForm({
       return;
     }
 
-    router.replace(next?.startsWith("/") ? next : "/home");
+    // A new account picks its ability before landing on Home.
+    router.replace(
+      mode === "signup" ? "/onboarding" : next?.startsWith("/") ? next : "/home",
+    );
     router.refresh();
   }
 
