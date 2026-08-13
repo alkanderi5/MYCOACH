@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Pause, Play, Stop } from "@phosphor-icons/react";
 import { Button, Card, ErrorNote, SectionTitle } from "./ui";
 import { PerformanceSheet } from "./sheets";
 import { createClient } from "@/lib/supabase/client";
 import { playAlertTone } from "@/lib/alert-tone";
+import {
+  clearDraft,
+  parseDraft,
+  readDraft,
+  subscribeToDrafts,
+  writeDraft,
+} from "@/lib/draft-store";
 import { formatClock, formatDuration, timerSnapshot, type TimerState } from "@/lib/progression/timer";
 import type { Drill, DrillAttempt, RawResult } from "@/lib/types";
 
@@ -21,8 +28,6 @@ type Stage = "idle" | "running" | "summary";
 
 const PRACTICE_PRESETS = [10, 20, 30];
 const BREAK_PRESETS = [0, 3, 5];
-/** Keeps an unsaved result alive across a reload or a failed save. */
-const DRAFT_KEY = (drillId: string) => `mycoach:draft:${drillId}`;
 
 export function DrillExperience({
   drill,
@@ -37,6 +42,16 @@ export function DrillExperience({
 
   const [stage, setStage] = useState<Stage>("idle");
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // A result left unsaved by a previous visit. Read from the store during
+  // render, so the banner is right on first paint.
+  const pendingDraft = parseDraft(
+    useSyncExternalStore(
+      subscribeToDrafts,
+      () => readDraft(drill.id),
+      () => null,
+    ),
+  );
   const [practiceMinutes, setPracticeMinutes] = useState(
     Math.max(5, drill.duration_minutes || 20),
   );
@@ -88,7 +103,7 @@ export function DrillExperience({
     return () => clearInterval(id);
   }, [timer, stage]);
 
-  const startPractice = useCallback(async () => {
+  async function startPractice() {
     // Ask for notifications here, where the reason is obvious, not on load.
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       try {
@@ -130,7 +145,7 @@ export function DrillExperience({
       .maybeSingle();
 
     if (data?.id) setSessionId(data.id);
-  }, [breakMinutes, drill.category_id, drill.id, drill.sheet_template_type, practiceMinutes]);
+  }
 
   function finish() {
     const practised = snapshot.practised || 0;
@@ -152,12 +167,9 @@ export function DrillExperience({
     setSaving(true);
     setSaveError("");
 
-    // Keep the result locally first so a network failure cannot lose it.
-    try {
-      window.localStorage.setItem(DRAFT_KEY(drill.id), JSON.stringify({ raw, note }));
-    } catch {
-      // Storage unavailable; the in-memory retry still works.
-    }
+    // Written before the request so a dropped connection, a closed tab or a
+    // reload cannot lose a result the player has already earned.
+    writeDraft(drill.id, { raw, note });
 
     const supabase = createClient();
     const {
@@ -197,19 +209,21 @@ export function DrillExperience({
     setSaving(false);
 
     if (error) {
-      // A duplicate means the first save actually landed; treat it as success.
+      // A duplicate key means the first save actually landed and this is a
+      // retry of a request that succeeded. Treat it as success rather than
+      // asking the player to try again forever.
       if (error.code === "23505") {
+        clearDraft(drill.id);
         setStage("summary");
         return;
       }
-      setSaveError(`That did not save: ${error.message}. Your result is kept — try again.`);
+      setSaveError(
+        `That did not save: ${error.message}. Your result is safe on this device — try again.`,
+      );
       return;
     }
 
-    try {
-      window.localStorage.removeItem(DRAFT_KEY(drill.id));
-    } catch {}
-
+    clearDraft(drill.id);
     setResult(data ?? null);
     setStage("summary");
     router.refresh();
@@ -301,6 +315,26 @@ export function DrillExperience({
             </>
           )}
         </Card>
+
+        {/* Offered before the sheet, so a player does not enter the same
+            result twice without realising the first one is still waiting. */}
+        {pendingDraft && !saving && (
+          <Card>
+            <SectionTitle>Unsaved result</SectionTitle>
+            <p className="mt-3 text-[13px] leading-relaxed text-muted">
+              A result from {relativeTime(pendingDraft.savedAt)} never reached the server.
+              It is still here.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <Button onClick={() => saveResult(pendingDraft.raw, pendingDraft.note)}>
+                Save it now
+              </Button>
+              <Button variant="outline" onClick={() => clearDraft(drill.id)}>
+                Discard
+              </Button>
+            </div>
+          </Card>
+        )}
 
         <div ref={sheetRef} className="scroll-mt-6">
           <Card>
@@ -440,6 +474,16 @@ function PresetRow({
       </div>
     </div>
   );
+}
+
+/** "just now" beats a raw timestamp for something that just failed to save. */
+function relativeTime(timestamp: number) {
+  const minutes = Math.round((Date.now() - timestamp) / 60000);
+  if (minutes < 1) return "a moment ago";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  return "an earlier session";
 }
 
 function notify(title: string, body: string) {
