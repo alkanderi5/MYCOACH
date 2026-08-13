@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, X } from "@phosphor-icons/react";
+import { Check, Trophy, X } from "@phosphor-icons/react";
 import { Button, cx } from "./ui";
 import { normalizeScore, validateAttempts } from "@/lib/progression/scoring";
 import type { Drill, RawResult, TemplateType } from "@/lib/types";
@@ -206,52 +206,90 @@ function SetsSheet({ drill, onSubmit, saving }: SheetProps) {
 
 function BestRunSheet({ drill, onSubmit, saving }: SheetProps) {
   const target = drill.sheet_configuration.target_run ?? 5;
-  const [runs, setRuns] = useState<number[]>([]);
-  const [current, setCurrent] = useState(0);
+
+  // Runs and the open run live in one piece of state so every tap can be a
+  // pure functional update. Tapping quickly through a run would otherwise
+  // batch several taps against the same stale value and lose all but one.
+  const [tally, setTally] = useState<{ runs: number[]; current: number }>({
+    runs: [],
+    current: 0,
+  });
+  const { runs, current } = tally;
   const [note, setNote] = useState("");
 
   const best = Math.max(0, ...runs, current);
+  const cleared = runs.filter((r) => r >= target).length;
   const score = normalizeScore(
     "best_run",
     { runs_attempted: runs.length, best_run: best },
     drill.sheet_configuration,
   );
 
+  /** A pot. When the drill states how many balls clear the table, reaching
+   *  that number closes the run on its own. */
+  const pot = () =>
+    setTally((state) => {
+      const next = state.current + 1;
+      if (target && next >= target) {
+        return { runs: [...state.runs, next], current: 0 };
+      }
+      return { ...state, current: next };
+    });
+
+  const closeRun = () =>
+    setTally((state) => ({ runs: [...state.runs, state.current], current: 0 }));
+
+  const undo = () =>
+    setTally((state) => {
+      if (state.current > 0) return { ...state, current: state.current - 1 };
+      const last = state.runs.at(-1);
+      if (last === undefined) return state;
+      return { runs: state.runs.slice(0, -1), current: last };
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex items-baseline justify-between">
         <p className="text-sm text-ink">
-          Run {runs.length + 1} · {current} in a row
+          Run {runs.length + 1} · {current} of {target} potted
         </p>
         <Button
           variant="quiet"
           size="sm"
           disabled={current === 0 && runs.length === 0}
-          onClick={() => {
-            if (current > 0) setCurrent((c) => c - 1);
-            else
-              setRuns((list) => {
-                setCurrent(list.at(-1) ?? 0);
-                return list.slice(0, -1);
-              });
-          }}
+          onClick={undo}
         >
           Undo
         </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <TallyButton kind="made" count={current} onClick={() => setCurrent((c) => c + 1)} />
+        <TallyButton kind="made" count={current} label="Potted" onClick={pot} />
         <TallyButton
           kind="miss"
-          count={runs.length}
-          label="End run"
-          onClick={() => {
-            setRuns((list) => [...list, current]);
-            setCurrent(0);
-          }}
+          count={runs.length - cleared}
+          label="Missed"
+          onClick={closeRun}
         />
       </div>
+
+      {/* Finishing a run without a miss is a different outcome from ending one
+          because you missed, so it gets its own control rather than sharing
+          the miss button. */}
+      <button
+        type="button"
+        disabled={current === 0}
+        onClick={closeRun}
+        className="flex min-h-[58px] w-full items-center justify-center gap-2 rounded-[12px] border text-[13px] font-medium uppercase tracking-[0.1em] transition-colors disabled:opacity-45"
+        style={{
+          borderColor: "var(--color-made)",
+          color: "var(--color-made)",
+          background: "color-mix(in srgb, var(--color-made) 10%, transparent)",
+        }}
+      >
+        <Trophy size={16} weight="fill" />
+        Run complete
+      </button>
 
       {runs.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -270,8 +308,10 @@ function BestRunSheet({ drill, onSubmit, saving }: SheetProps) {
       )}
 
       <dl className="space-y-2 text-[13px]">
+        <Row label="Runs cleared">
+          {cleared} of {runs.length}
+        </Row>
         <Row label="Best run">{best}</Row>
-        <Row label="Target">{target}</Row>
       </dl>
 
       <ScoreLine score={score} caption="Progress towards the target run" />

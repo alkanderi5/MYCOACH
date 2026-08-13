@@ -10,7 +10,14 @@ import { playAlertTone } from "@/lib/alert-tone";
 import { formatClock, formatDuration, timerSnapshot, type TimerState } from "@/lib/progression/timer";
 import type { Drill, DrillAttempt, RawResult } from "@/lib/types";
 
-type Stage = "setup" | "running" | "sheet" | "summary";
+/**
+ * The sheet is never hidden behind the timer.
+ *
+ * Plenty of practice is untimed, and a player standing at the table wants the
+ * scoring buttons in front of them the moment the drill opens — not after a
+ * mode switch. The timer sits above it as something you may or may not use.
+ */
+type Stage = "idle" | "running" | "summary";
 
 const PRACTICE_PRESETS = [10, 20, 30];
 const BREAK_PRESETS = [0, 3, 5];
@@ -28,7 +35,8 @@ export function DrillExperience({
 }) {
   const router = useRouter();
 
-  const [stage, setStage] = useState<Stage>("setup");
+  const [stage, setStage] = useState<Stage>("idle");
+  const sheetRef = useRef<HTMLDivElement>(null);
   const [practiceMinutes, setPracticeMinutes] = useState(
     Math.max(5, drill.duration_minutes || 20),
   );
@@ -134,7 +142,10 @@ export function DrillExperience({
       return;
     }
     setPractisedSeconds(practised);
-    setStage("sheet");
+    setStage("idle");
+    // The sheet is already on the page; bring it into view rather than
+    // swapping the screen out from under the player.
+    sheetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function saveResult(raw: RawResult, note: string) {
@@ -204,119 +215,114 @@ export function DrillExperience({
     router.refresh();
   }
 
-  /* ── setup ── */
-  if (stage === "setup") {
-    return (
-      <Card>
-        <SectionTitle>Practice timer</SectionTitle>
-
-        <div className="mt-5 space-y-5">
-          <PresetRow
-            label="Practice"
-            value={practiceMinutes}
-            presets={PRACTICE_PRESETS}
-            onChange={setPracticeMinutes}
-          />
-          <PresetRow
-            label="Break"
-            value={breakMinutes}
-            presets={BREAK_PRESETS}
-            onChange={setBreakMinutes}
-            allowNone
-          />
-        </div>
-
-        <Button size="lg" className="mt-7 w-full" onClick={startPractice}>
-          <Play size={17} weight="fill" />
-          Start Practice
-        </Button>
-
-        <button
-          type="button"
-          onClick={() => setStage("sheet")}
-          className="mx-auto mt-4 block text-[12px] text-muted hover:text-accent"
-        >
-          Record a result without the timer
-        </button>
-      </Card>
-    );
-  }
-
-  /* ── running ── */
-  if (stage === "running") {
+  /* ── timer above, sheet always below ── */
+  if (stage !== "summary") {
     const onBreak = snapshot.phase === "break";
+
     return (
-      <Card>
-        <p className="text-center text-[11px] uppercase tracking-[0.22em] text-accent-ink">
-          {onBreak ? "Break" : snapshot.phase === "practice" ? "Practice" : "Ready"}
-        </p>
-        <p
-          role="timer"
-          className="mt-3 text-center text-[68px] font-light leading-none tabular-nums tracking-tight text-ink"
-        >
-          {formatClock(snapshot.remaining)}
-        </p>
-        <p className="mt-3 text-center text-[12px] text-faint">
-          {formatDuration(snapshot.practised)} practised
-        </p>
+      <div className="space-y-6">
+        <Card>
+          <SectionTitle>Practice timer</SectionTitle>
 
-        {alert && (
-          <p className="mt-5 flex items-start gap-3 text-[13px] text-ink" role="status">
-            <span aria-hidden className="mt-0.5 w-px self-stretch bg-accent" />
-            {alert}
-          </p>
-        )}
+          {stage === "running" ? (
+            <>
+              <p className="mt-5 text-center text-[11px] uppercase tracking-[0.22em] text-accent-ink">
+                {onBreak ? "Break" : snapshot.phase === "practice" ? "Practice" : "Ready"}
+              </p>
+              <p
+                role="timer"
+                className="mt-3 text-center text-[68px] font-light leading-none tabular-nums tracking-tight text-ink"
+              >
+                {formatClock(snapshot.remaining)}
+              </p>
+              <p className="mt-3 text-center text-[12px] text-faint">
+                {formatDuration(snapshot.practised)} practised
+              </p>
 
-        <div className="mt-7 grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            onClick={() =>
-              setTimer((t) =>
-                t
-                  ? t.pausedAt
-                    ? {
-                        ...t,
-                        pausedAt: null,
-                        pausedTotal: (t.pausedTotal ?? 0) + (Date.now() - t.pausedAt),
-                      }
-                    : { ...t, pausedAt: Date.now() }
-                  : t,
-              )
-            }
-          >
-            {timer?.pausedAt ? <Play size={15} weight="fill" /> : <Pause size={15} weight="fill" />}
-            {timer?.pausedAt ? "Resume" : "Pause"}
-          </Button>
-          <Button onClick={finish}>
-            <Stop size={15} weight="fill" />
-            Finish
-          </Button>
+              {alert && (
+                <p className="mt-5 flex items-start gap-3 text-[13px] text-ink" role="status">
+                  <span aria-hidden className="mt-0.5 w-px self-stretch bg-accent" />
+                  {alert}
+                </p>
+              )}
+
+              <div className="mt-7 grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setTimer((t) =>
+                      t
+                        ? t.pausedAt
+                          ? {
+                              ...t,
+                              pausedAt: null,
+                              pausedTotal: (t.pausedTotal ?? 0) + (Date.now() - t.pausedAt),
+                            }
+                          : { ...t, pausedAt: Date.now() }
+                        : t,
+                    )
+                  }
+                >
+                  {timer?.pausedAt ? <Play size={15} weight="fill" /> : <Pause size={15} weight="fill" />}
+                  {timer?.pausedAt ? "Resume" : "Pause"}
+                </Button>
+                <Button onClick={finish}>
+                  <Stop size={15} weight="fill" />
+                  Finish
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                Optional. You can record a result without ever starting it.
+              </p>
+
+              <div className="mt-5 space-y-5">
+                <PresetRow
+                  label="Practice"
+                  value={practiceMinutes}
+                  presets={PRACTICE_PRESETS}
+                  onChange={setPracticeMinutes}
+                />
+                <PresetRow
+                  label="Break"
+                  value={breakMinutes}
+                  presets={BREAK_PRESETS}
+                  onChange={setBreakMinutes}
+                  allowNone
+                />
+              </div>
+
+              <Button variant="outline" size="lg" className="mt-7 w-full" onClick={startPractice}>
+                <Play size={17} weight="fill" />
+                Start Practice
+              </Button>
+            </>
+          )}
+        </Card>
+
+        <div ref={sheetRef} className="scroll-mt-6">
+          <Card>
+            <SectionTitle>Record your result</SectionTitle>
+            {drill.success_condition_text && (
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                {drill.success_condition_text}
+              </p>
+            )}
+
+            {saveError && (
+              <div className="mt-5">
+                <ErrorNote>{saveError}</ErrorNote>
+              </div>
+            )}
+
+            <div className="mt-6">
+              <PerformanceSheet drill={drill} onSubmit={saveResult} saving={saving} />
+            </div>
+          </Card>
         </div>
-      </Card>
-    );
-  }
-
-  /* ── sheet ── */
-  if (stage === "sheet") {
-    return (
-      <Card>
-        <SectionTitle>Record your result</SectionTitle>
-        {drill.success_condition_text && (
-          <p className="mt-3 text-[13px] leading-relaxed text-muted">
-            {drill.success_condition_text}
-          </p>
-        )}
-
-        {saveError && (
-          <div className="mt-5">
-            <ErrorNote>{saveError}</ErrorNote>
-          </div>
-        )}
-
-        <div className="mt-6">
-          <PerformanceSheet drill={drill} onSubmit={saveResult} saving={saving} />
-        </div>
-      </Card>
+      </div>
     );
   }
 
@@ -366,7 +372,7 @@ export function DrillExperience({
           onClick={() => {
             setResult(null);
             setSessionId(null);
-            setStage("setup");
+            setStage("idle");
           }}
         >
           Repeat this drill
