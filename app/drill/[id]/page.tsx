@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { DrillExperience } from "@/components/DrillExperience";
 import { TableDiagram } from "@/components/TableDiagram";
 import { Badge, Card, SectionTitle } from "@/components/ui";
-import { ResultPills } from "@/components/PracticeChart";
+import { ResultPills } from "@/components/ResultPills";
 import { createClient } from "@/lib/supabase/server";
 import { loadProgram } from "@/lib/program";
 import type { DrillAttempt } from "@/lib/types";
